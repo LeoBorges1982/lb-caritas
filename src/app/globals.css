@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lb-bg: #f8fafc;
+  --color-lb-surface: #ffffff;
+  --color-lb-border: #e2e8f0;
+  --color-lb-primary: #1e3a8a;
+  --color-lb-accent: #d4af37;
+}
+
+html, body {
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }

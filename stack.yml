@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  app:
+    image: lb-caritas:latest
+    env_file:
+      - .env
+    networks:
+      - network_swarm_public
+    deploy:
+      replicas: 1
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.caritas.rule=Host(`caritas.leoborgescontador.com.br`)
+        - traefik.http.routers.caritas.entrypoints=websecure
+        - traefik.http.routers.caritas.tls=true
+        - traefik.http.routers.caritas.tls.certresolver=letsencrypt
+        - traefik.http.services.caritas.loadbalancer.server.port=3000
+
+networks:
+  network_swarm_public:
+    external: true
