@@ -27,23 +27,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ----------------------------------------------------------------------------
--- 2) Helpers de autorização (SECURITY DEFINER pra bypassar RLS recursivo)
--- ----------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION caritas_eh_admin()
-RETURNS BOOLEAN AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM perfis WHERE id = auth.uid() AND papel = 'admin'
-  );
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
-
-CREATE OR REPLACE FUNCTION caritas_tem_acesso_convenio(p_convenio_id UUID)
-RETURNS BOOLEAN AS $$
-  SELECT caritas_eh_admin() OR EXISTS (
-    SELECT 1 FROM caritas_usuarios_acesso
-    WHERE usuario_id = auth.uid() AND convenio_id = p_convenio_id
-  );
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+-- (Helpers de autorização criados ao final, depois que as tabelas existirem.)
 
 -- ============================================================================
 -- TABELAS
@@ -414,6 +398,24 @@ CREATE TABLE caritas_usuarios_acesso (
 
 CREATE INDEX idx_usracesso_usuario ON caritas_usuarios_acesso(usuario_id);
 CREATE INDEX idx_usracesso_convenio ON caritas_usuarios_acesso(convenio_id);
+
+-- ============================================================================
+-- HELPERS de autorização (criados aqui porque referenciam tabelas acima)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION caritas_eh_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM perfis WHERE id = auth.uid() AND papel = 'admin'
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION caritas_tem_acesso_convenio(p_convenio_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT caritas_eh_admin() OR EXISTS (
+    SELECT 1 FROM caritas_usuarios_acesso
+    WHERE usuario_id = auth.uid() AND convenio_id = p_convenio_id
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- ============================================================================
 -- RLS — Row Level Security
