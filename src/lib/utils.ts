@@ -1,16 +1,30 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { format, parseISO, differenceInDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatBRL(n: number): string {
-  return n.toLocaleString("pt-BR", {
+export function formatBRL(n: number | null | undefined): string {
+  const v = typeof n === "number" ? n : 0;
+  return v.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
     maximumFractionDigits: 2,
   });
+}
+
+export function formatDate(d: string | Date | null | undefined, fmt = "dd/MM/yyyy"): string {
+  if (!d) return "—";
+  const date = typeof d === "string" ? parseISO(d) : d;
+  return format(date, fmt, { locale: ptBR });
+}
+
+export function diasAteVigencia(fim: string | null | undefined): number | null {
+  if (!fim) return null;
+  return differenceInDays(parseISO(fim), new Date());
 }
 
 export function formatCNPJ(cnpj: string): string {
