@@ -80,7 +80,11 @@ export default async function MetasPage({ params }: PageProps) {
             {obj.metas.map((m) => {
               const tituloCurto = m.titulo.replace(/^OBJETIVO\s+\d+\s*[·\-]\s*/i, "");
               return (
-                <div key={m.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                <Link
+                  key={m.id}
+                  href={`/convenios/${convenio.id}/metas/${m.id}`}
+                  className="block bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-[#1e3a8a]/40 hover:shadow-md transition"
+                >
                   <div className="flex items-start gap-3">
                     <div className="bg-[#1e3a8a]/10 text-[#1e3a8a] font-mono text-xs font-bold px-2 py-1 rounded shrink-0">
                       {m.codigo}
@@ -130,7 +134,7 @@ export default async function MetasPage({ params }: PageProps) {
                       )}
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
