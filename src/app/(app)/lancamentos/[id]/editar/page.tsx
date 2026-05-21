@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { buscarLancamento, listarOpcoesFormulario } from "@/lib/lancamentos";
+import { buscarLancamento, listarOpcoesFormulario, listarVedacoesPorConvenio } from "@/lib/lancamentos";
 import LancamentoForm from "@/components/LancamentoForm";
 import { atualizarLancamento } from "../../actions";
 
@@ -13,9 +13,10 @@ interface PageProps {
 
 export default async function EditarLancamentoPage({ params }: PageProps) {
   const { id } = await params;
-  const [lancamento, opcoes] = await Promise.all([
+  const [lancamento, opcoes, vedacoesPorConvenio] = await Promise.all([
     buscarLancamento(id),
     listarOpcoesFormulario(),
+    listarVedacoesPorConvenio(),
   ]);
   if (!lancamento) notFound();
 
@@ -31,7 +32,7 @@ export default async function EditarLancamentoPage({ params }: PageProps) {
         <p className="text-sm text-slate-500 mt-1">Convênio {lancamento.convenio_numero}</p>
       </div>
 
-      <LancamentoForm modo="editar" opcoes={opcoes} inicial={lancamento} action={action} />
+      <LancamentoForm modo="editar" opcoes={opcoes} inicial={lancamento} action={action} vedacoesPorConvenio={vedacoesPorConvenio} />
     </div>
   );
 }

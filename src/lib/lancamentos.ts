@@ -243,6 +243,23 @@ export async function listarOpcoesFormulario(): Promise<OpcoesFormulario> {
   };
 }
 
+export async function listarVedacoesPorConvenio(): Promise<Record<string, Array<{ id: string; descricao: string; base_legal: string | null; ativa: boolean }>>> {
+  const supabase = adminClient();
+  const { data } = await supabase
+    .from("caritas_vedacoes")
+    .select("id, convenio_id, descricao, base_legal, ativa")
+    .eq("ativa", true);
+
+  const map: Record<string, Array<{ id: string; descricao: string; base_legal: string | null; ativa: boolean }>> = {};
+  for (const v of data ?? []) {
+    if (!map[v.convenio_id]) map[v.convenio_id] = [];
+    map[v.convenio_id].push({
+      id: v.id, descricao: v.descricao, base_legal: v.base_legal, ativa: v.ativa,
+    });
+  }
+  return map;
+}
+
 export function tipoExigeDespesa(tipo: TipoLancamento): boolean {
   return tipo === "despesa";
 }

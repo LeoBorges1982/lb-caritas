@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { listarOpcoesFormulario } from "@/lib/lancamentos";
+import { listarOpcoesFormulario, listarVedacoesPorConvenio } from "@/lib/lancamentos";
 import LancamentoForm from "@/components/LancamentoForm";
 import { criarLancamento } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function NovoLancamentoPage() {
-  const opcoes = await listarOpcoesFormulario();
+  const [opcoes, vedacoesPorConvenio] = await Promise.all([
+    listarOpcoesFormulario(),
+    listarVedacoesPorConvenio(),
+  ]);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -21,7 +24,7 @@ export default async function NovoLancamentoPage() {
         </p>
       </div>
 
-      <LancamentoForm modo="criar" opcoes={opcoes} action={criarLancamento} />
+      <LancamentoForm modo="criar" opcoes={opcoes} action={criarLancamento} vedacoesPorConvenio={vedacoesPorConvenio} />
     </div>
   );
 }

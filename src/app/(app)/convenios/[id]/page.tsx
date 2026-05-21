@@ -5,7 +5,9 @@ import {
   Target, ListChecks, ShieldAlert, Receipt, Banknote
 } from "lucide-react";
 import { buscarConvenio, STATUS_LABEL, STATUS_CORES, TIPO_LABEL } from "@/lib/convenios";
+import { listarAnexos } from "@/lib/anexos";
 import { formatBRL, formatDate, formatCNPJ, diasAteVigencia, cn } from "@/lib/utils";
+import AnexosBloco from "@/components/AnexosBloco";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,8 @@ export default async function ConvenioDetalhePage({ params }: PageProps) {
   const c = await buscarConvenio(id);
 
   if (!c) notFound();
+
+  const anexos = await listarAnexos("convenio", c.id);
 
   const diasRestantes = diasAteVigencia(c.vigencia_fim);
   const venceu = diasRestantes !== null && diasRestantes < 0;
@@ -155,6 +159,15 @@ export default async function ConvenioDetalhePage({ params }: PageProps) {
         <SecaoLink icon={<Receipt size={16} />} titulo="Lançamentos" qtd={c.counts.lancamentos} legenda="Movimentação financeira" href={`/lancamentos?convenio_id=${c.id}`} />
         <SecaoLink icon={<ShieldAlert size={16} />} titulo="Vedações" qtd={c.counts.vedacoes} legenda="Itens proibidos" href={`/convenios/${c.id}/vedacoes`} />
       </div>
+
+      <AnexosBloco
+        convenioId={c.id}
+        entidade="convenio"
+        entidadeId={c.id}
+        anexos={anexos}
+        revalidatePath={`/convenios/${c.id}`}
+        titulo="Documentos do convênio"
+      />
 
       {c.observacoes && (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">

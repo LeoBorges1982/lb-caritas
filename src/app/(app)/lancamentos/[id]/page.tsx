@@ -10,7 +10,7 @@ import {
 import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
 import { listarAnexos } from "@/lib/anexos";
 import AcoesLancamento from "@/components/AcoesLancamento";
-import AnexosLancamento from "@/components/AnexosLancamento";
+import AnexosBloco from "@/components/AnexosBloco";
 
 export const dynamic = "force-dynamic";
 
@@ -166,7 +166,14 @@ export default async function LancamentoDetalhePage({ params }: PageProps) {
       )}
 
       {/* Anexos */}
-      <AnexosLancamento convenioId={l.convenio_id} lancamentoId={id} anexos={anexos} />
+      <AnexosBloco
+        convenioId={l.convenio_id}
+        entidade="lancamento"
+        entidadeId={id}
+        anexos={anexos}
+        revalidatePath={`/lancamentos/${id}`}
+        titulo="Comprovantes e NF"
+      />
 
       {/* Observações */}
       {l.observacoes && (

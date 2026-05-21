@@ -11,6 +11,8 @@ import {
   type Lancamento,
   type OpcoesFormulario,
 } from "@/lib/lancamentos";
+import type { Vedacao } from "@/lib/vedacoes";
+import AvisoVedacoes from "@/components/AvisoVedacoes";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -18,17 +20,20 @@ interface Props {
   opcoes: OpcoesFormulario;
   inicial?: Lancamento | null;
   action: (fd: FormData) => Promise<void>;
+  vedacoesPorConvenio?: Record<string, Vedacao[]>;
 }
 
 const TIPOS_DISPONIVEIS: TipoLancamento[] = ["despesa", "repasse", "rendimento", "devolucao", "estorno"];
 
-export default function LancamentoForm({ modo, opcoes, inicial, action }: Props) {
+export default function LancamentoForm({ modo, opcoes, inicial, action, vedacoesPorConvenio }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
 
   const [convenioId, setConvenioId] = useState<string>(inicial?.convenio_id ?? opcoes.convenios[0]?.id ?? "");
   const [tipo, setTipo] = useState<TipoLancamento>(inicial?.tipo ?? "despesa");
+  const [descricao, setDescricao] = useState<string>(inicial?.descricao ?? "");
+  const [fornecedor, setFornecedor] = useState<string>(inicial?.fornecedor_nome ?? "");
 
   const metasFiltradas = useMemo(
     () => opcoes.metas.filter((m) => m.convenio_id === convenioId),
@@ -40,6 +45,8 @@ export default function LancamentoForm({ modo, opcoes, inicial, action }: Props)
   );
 
   const ehDespesa = tipo === "despesa";
+  const vedacoes = vedacoesPorConvenio?.[convenioId] ?? [];
+  const contextoVed = `${descricao} ${fornecedor}`;
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -128,7 +135,8 @@ export default function LancamentoForm({ modo, opcoes, inicial, action }: Props)
             required
             rows={2}
             placeholder="Ex: Pagamento de salário cozinheira - referência abril/2025"
-            defaultValue={inicial?.descricao ?? ""}
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
             className={inputCn}
           />
         </Field>
@@ -198,7 +206,8 @@ export default function LancamentoForm({ modo, opcoes, inicial, action }: Props)
                 name="fornecedor_nome"
                 type="text"
                 placeholder="Ex: Cereais da Vila Ltda"
-                defaultValue={inicial?.fornecedor_nome ?? ""}
+                value={fornecedor}
+                onChange={(e) => setFornecedor(e.target.value)}
                 className={inputCn}
               />
             </Field>
@@ -269,6 +278,11 @@ export default function LancamentoForm({ modo, opcoes, inicial, action }: Props)
           />
         </Field>
       </Section>
+
+      {/* Vedações (Lei 13.019/2014) */}
+      {ehDespesa && vedacoes.length > 0 && (
+        <AvisoVedacoes vedacoes={vedacoes} contextoTextual={contextoVed} />
+      )}
 
       {/* Ações */}
       <div className="flex items-center justify-end gap-3 pt-2">

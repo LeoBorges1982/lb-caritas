@@ -3,20 +3,23 @@
 import { useState, useTransition, useRef } from "react";
 import { Upload, FileText, Image as ImageIcon, File as FileIcon, Download, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import {
-  uploadAnexo,
-  obterUrlDownloadAnexo,
-  deletarAnexo,
-} from "@/app/(app)/lancamentos/[id]/anexos-actions";
-import { tipoIcone, formatarTamanho, type Anexo } from "@/lib/anexos";
+  uploadAnexoUniversal,
+  obterUrlDownloadUniversal,
+  deletarAnexoUniversal,
+} from "@/app/anexos/actions";
+import { tipoIcone, formatarTamanho, type Anexo, type EntidadeAnexo } from "@/lib/anexos";
 import { formatDate, cn } from "@/lib/utils";
 
 interface Props {
   convenioId: string;
-  lancamentoId: string;
+  entidade: EntidadeAnexo;
+  entidadeId: string;
   anexos: Anexo[];
+  revalidatePath: string;
+  titulo?: string;
 }
 
-export default function AnexosLancamento({ convenioId, lancamentoId, anexos }: Props) {
+export default function AnexosBloco({ convenioId, entidade, entidadeId, anexos, revalidatePath, titulo = "Anexos" }: Props) {
   const [pending, startTransition] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,16 +27,16 @@ export default function AnexosLancamento({ convenioId, lancamentoId, anexos }: P
   function handleUpload(arquivos: FileList | null) {
     if (!arquivos || arquivos.length === 0) return;
     setErro(null);
-
     startTransition(async () => {
       try {
         for (const arquivo of Array.from(arquivos)) {
           const fd = new FormData();
           fd.append("arquivo", arquivo);
           fd.append("convenio_id", convenioId);
-          fd.append("entidade", "lancamento");
-          fd.append("entidade_id", lancamentoId);
-          await uploadAnexo(fd);
+          fd.append("entidade", entidade);
+          fd.append("entidade_id", entidadeId);
+          fd.append("revalidate", revalidatePath);
+          await uploadAnexoUniversal(fd);
         }
         if (inputRef.current) inputRef.current.value = "";
       } catch (err) {
@@ -44,7 +47,7 @@ export default function AnexosLancamento({ convenioId, lancamentoId, anexos }: P
 
   async function handleDownload(id: string) {
     try {
-      const url = await obterUrlDownloadAnexo(id);
+      const url = await obterUrlDownloadUniversal(id);
       window.open(url, "_blank");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao baixar");
@@ -56,7 +59,7 @@ export default function AnexosLancamento({ convenioId, lancamentoId, anexos }: P
     setErro(null);
     startTransition(async () => {
       try {
-        await deletarAnexo(id);
+        await deletarAnexoUniversal(id, revalidatePath);
       } catch (err) {
         setErro(err instanceof Error ? err.message : "Erro ao excluir");
       }
@@ -67,7 +70,7 @@ export default function AnexosLancamento({ convenioId, lancamentoId, anexos }: P
     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Anexos · {anexos.length}
+          {titulo} · {anexos.length}
         </div>
         <button
           type="button"
@@ -99,7 +102,7 @@ export default function AnexosLancamento({ convenioId, lancamentoId, anexos }: P
         <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">
           <FileIcon size={24} className="mx-auto text-slate-400 mb-2" />
           <p className="text-xs text-slate-500">
-            Nenhum anexo. Suba a NF, recibo ou comprovante (PDF/JPG/PNG, máx 10 MB).
+            Nenhum anexo. PDF/JPG/PNG até 10 MB.
           </p>
         </div>
       ) : (
