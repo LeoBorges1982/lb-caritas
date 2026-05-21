@@ -4,11 +4,12 @@ import { validarSessaoToken } from "@/lib/sessao";
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  // Públicos: SSO entry, assets, webhooks
+  // Públicos: SSO entry, assets, webhooks, cron jobs (autenticados via header)
   if (
     path === "/auth-via-portal" ||
     path === "/login" ||
     path.startsWith("/api/webhooks/") ||
+    path.startsWith("/api/cron/") ||
     path.startsWith("/_next") ||
     path === "/favicon.ico" ||
     path === "/logo-lb.png"
