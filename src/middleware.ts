@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { validarSessaoToken } from "@/lib/sessao";
 
-const PORTAL_URL = process.env.PORTAL_URL || "https://portal.leoborgescontador.com.br";
-
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 

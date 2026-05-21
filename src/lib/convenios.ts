@@ -101,8 +101,26 @@ export async function listarConvenios(): Promise<ConvenioListItem[]> {
     }
   }
 
-  return (data ?? []).map((c: any) => {
+  type Row = {
+    id: string;
+    numero: string;
+    tipo: string;
+    status: StatusConvenio;
+    objeto: string;
+    valor_total: number | string;
+    vigencia_inicio: string;
+    vigencia_fim: string;
+    osc: { nome: string } | { nome: string }[] | null;
+    orgao: { sigla: string | null } | { sigla: string | null }[] | null;
+  };
+
+  const pick = <T,>(v: T | T[] | null): T | null =>
+    Array.isArray(v) ? (v[0] ?? null) : v;
+
+  return (data as Row[] ?? []).map((c) => {
     const s = saldoMap.get(c.id);
+    const osc = pick(c.osc);
+    const orgao = pick(c.orgao);
     return {
       id: c.id,
       numero: c.numero,
@@ -115,8 +133,8 @@ export async function listarConvenios(): Promise<ConvenioListItem[]> {
       total_saidas: s?.total_saidas ?? 0,
       vigencia_inicio: c.vigencia_inicio,
       vigencia_fim: c.vigencia_fim,
-      osc_nome: c.osc?.nome ?? "—",
-      orgao_sigla: c.orgao?.sigla ?? null,
+      osc_nome: osc?.nome ?? "—",
+      orgao_sigla: orgao?.sigla ?? null,
     };
   });
 }
@@ -149,7 +167,24 @@ export async function buscarConvenio(id: string): Promise<ConvenioDetalhe | null
     supabase.from("caritas_lancamentos").select("id", { count: "exact", head: true }).eq("convenio_id", id),
   ]);
 
-  const c: any = conv;
+  type OscJoin = ConvenioDetalhe["osc"];
+  type OrgaoJoin = ConvenioDetalhe["orgao"];
+  type ConvRow = Omit<ConvenioDetalhe, "osc" | "orgao" | "saldo" | "counts" | "valor_total" | "valor_repasse" | "valor_contrapartida" | "rendimentos"> & {
+    valor_total: number | string;
+    valor_repasse: number | string;
+    valor_contrapartida: number | string;
+    rendimentos: number | string;
+    osc: OscJoin | OscJoin[] | null;
+    orgao: OrgaoJoin | OrgaoJoin[] | null;
+  };
+
+  const c = conv as unknown as ConvRow;
+  const pick = <T,>(v: T | T[] | null): T | null =>
+    Array.isArray(v) ? (v[0] ?? null) : v;
+
+  const osc = pick(c.osc) as ConvenioDetalhe["osc"];
+  const orgao = pick(c.orgao) as ConvenioDetalhe["orgao"];
+
   return {
     id: c.id,
     numero: c.numero,
@@ -172,8 +207,8 @@ export async function buscarConvenio(id: string): Promise<ConvenioDetalhe | null
     gestor_publico: c.gestor_publico,
     gestor_osc: c.gestor_osc,
     observacoes: c.observacoes,
-    osc: c.osc,
-    orgao: c.orgao,
+    osc,
+    orgao,
     saldo: {
       total_entradas: Number(saldoRes.data?.total_entradas ?? 0),
       total_saidas: Number(saldoRes.data?.total_saidas ?? 0),
