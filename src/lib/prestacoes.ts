@@ -334,7 +334,8 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
   };
   const lancs = (periodoRes.data ?? []) as LancRow[];
 
-  let repasses = 0, rendimentos = 0, outras_rec = 0, recursos_osc = 0;
+  let repasses = 0, rendimentos = 0;
+  const outras_rec = 0, recursos_osc = 0;
   let saldo_abertura_periodo = 0;
   for (const l of lancs) {
     const v = Number(l.valor);
