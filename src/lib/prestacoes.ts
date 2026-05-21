@@ -1,5 +1,4 @@
 import { adminClient } from "@/lib/supabase/admin";
-import type { LancamentoBalancete } from "@/lib/balancetes";
 import type { TipoLancamento, StatusLancamento } from "@/lib/lancamentos";
 
 export type TipoPrestacao = "parcial" | "final";
@@ -16,6 +15,7 @@ export interface PrestacaoListItem {
   convenio_id: string;
   convenio_numero: string;
   tipo: TipoPrestacao;
+  numero_parcela: number | null;
   periodo_inicio: string;
   periodo_fim: string;
   status: StatusPrestacao;
@@ -26,41 +26,91 @@ export interface PrestacaoListItem {
   criado_em: string;
 }
 
-export interface RubricaExecucao {
-  categoria_id: string | null;
-  codigo: string | null;
-  nome: string | null;
-  grupo: string | null;
-  valor_previsto: number;
-  valor_realizado: number;
-  valor_glosado: number;
-  saldo: number;
-  pct: number;
-  qtd: number;
+// ============================================================================
+// Estruturas do modelo SEMAS-NI
+// ============================================================================
+
+/** Receita: A,B,C,D,E + Total */
+export interface ReceitaSEMAS {
+  repasses_municipais: number;       // A
+  rendimentos_aplicacao: number;     // B
+  recursos_osc: number;              // C
+  outras_receitas: number;           // D
+  saldo_periodo_anterior: number;    // E
+  total: number;                     // A+B+C+D+E
 }
 
-export interface MetaExecucao {
-  id: string;
+/** Linha individual de despesa com Valor e Valor N.E. */
+export interface LinhaDespesa {
   codigo: string;
-  titulo: string;
-  objetivo: string | null;
-  indicador: string | null;
-  quantidade_prevista: number | null;
-  unidade_medida: string | null;
-  valor_realizado: number;
-  qtd_lancamentos: number;
+  nome: string;
+  valor: number;
+  valor_ne: number;
 }
 
-export interface ConciliacaoLinha {
-  total_lancamentos: number;
-  conciliados: number;
-  pendentes: number;
+/** Despesa estruturada 1.x, 2.x, 3.x, 4.x, 5, 6, 7 */
+export interface DespesaSEMAS {
+  rh: { total: number; linhas: LinhaDespesa[] };           // (1) Recursos Humanos
+  materiais: { total: number; linhas: LinhaDespesa[] };    // (2) Materiais de Consumo
+  servicos: { total: number; linhas: LinhaDespesa[] };     // (3) Prestação de Serviços
+  locacao: { total: number; linhas: LinhaDespesa[] };      // (4) Locação
+  outras: number;                                          // (5)
+  outras_ne: number;
+  devolvido: number;                                       // (6) Devolvido ao Município
+  devolvido_ne: number;
+  saldo_proximo: number;                                   // (7) Saldo p/ próximo período
+  saldo_proximo_ne: number;
+  total: number;
+  total_ne: number;
+}
+
+/** Conciliação Bancária (Seção 3.2) */
+export interface ConciliacaoBancaria {
+  data_extrato: string;
+  saldo_extrato: number;                  // A
+  creditos_pendentes_repasses: number;   // B (parte)
+  creditos_pendentes_rendimentos: number;
+  creditos_pendentes_osc: number;
+  creditos_pendentes_outras: number;
+  total_creditos_pendentes: number;       // B
+  debitos_pendentes_rh: number;          // C (parte)
+  debitos_pendentes_materiais: number;
+  debitos_pendentes_locacao: number;
+  debitos_pendentes_servicos: number;
+  debitos_pendentes_outras: number;
+  total_debitos_pendentes: number;        // C
+  saldo_contabil: number;                 // A+B+C
+}
+
+/** Linha da relação de pagamentos */
+export interface LinhaPagamento {
+  data: string;
+  credor: string;
+  cpf_cnpj: string | null;
+  item_orcamento: string;        // ou descrição
+  nf_rec: string | null;
+  ob: string | null;
+  valor: number;
+}
+
+/** Acompanhamento da execução financeira (Seção 4) */
+export interface LinhaAcompanhamento {
+  codigo: string;
+  nome: string;
+  previsto_mensal: number;
+  executado_periodo_concedente: number;
+  executado_periodo_total: number;
+  previsto_acumulado: number;
+  executado_acumulado_concedente: number;
+  executado_acumulado_osc: number;
+  executado_acumulado_total: number;
 }
 
 export interface PrestacaoConsolidada {
   prestacao: {
     id: string;
     tipo: TipoPrestacao;
+    numero_parcela: number | null;
     periodo_inicio: string;
     periodo_fim: string;
     status: StatusPrestacao;
@@ -77,35 +127,69 @@ export interface PrestacaoConsolidada {
     numero: string;
     tipo: string;
     objeto: string;
-    publico_alvo: string | null;
     valor_total: number;
     valor_repasse: number;
     valor_contrapartida: number;
     vigencia_inicio: string;
     vigencia_fim: string;
+    data_assinatura: string | null;
     banco: string | null;
     agencia: string | null;
     conta_corrente: string | null;
     conta_aplicacao: string | null;
     gestor_publico: string | null;
     gestor_osc: string | null;
+    gestor_osc_cpf: string | null;
+    responsavel_legal_nome: string | null;
+    responsavel_legal_cpf: string | null;
+    elaborador_nome: string | null;
+    elaborador_cpf: string | null;
+    contabilista_nome: string | null;
+    contabilista_cpf: string | null;
+    contabilista_crc: string | null;
+    responsavel_tecnico_nome: string | null;
+    responsavel_tecnico_cpf: string | null;
+    responsavel_tecnico_email: string | null;
+    responsavel_tecnico_funcao: string | null;
+    nota_empenho_numero: string | null;
+    nota_empenho_valor: number | null;
   };
-  osc: { nome: string; cnpj: string; responsavel: string | null };
-  orgao: { nome: string; sigla: string | null; fundo: string | null };
-  resumo: {
-    saldo_inicial: number;
-    total_entradas: number;
-    total_saidas: number;
-    rendimentos: number;
-    saldo_final: number;
-    glosa_total: number;
-    qtd_lancamentos: number;
+  osc: {
+    nome: string;
+    cnpj: string;
+    endereco: string | null;
+    cep: string | null;
+    cidade: string | null;
+    estado: string | null;
+    telefone: string | null;
+    email: string | null;
   };
-  rubricas: RubricaExecucao[];
-  metas: MetaExecucao[];
-  conciliacao: ConciliacaoLinha;
-  lancamentos: LancamentoBalancete[];
-  glosados: LancamentoBalancete[];
+  orgao: {
+    nome: string;
+    sigla: string | null;
+    fundo: string | null;
+  };
+  // Seção 3.1
+  receita: ReceitaSEMAS;
+  despesa: DespesaSEMAS;
+  // Seção 3.2
+  conciliacao: ConciliacaoBancaria;
+  // Seção 3.3
+  pagamentos: {
+    rh: LinhaPagamento[];
+    materiais: LinhaPagamento[];
+    servicos: LinhaPagamento[];
+    locacao: LinhaPagamento[];
+    outras: LinhaPagamento[];
+    devolvidos: LinhaPagamento[];
+    total: number;
+  };
+  // Seção 4
+  acompanhamento: {
+    linhas: LinhaAcompanhamento[];
+    total_periodo: number;
+    total_acumulado: number;
+  };
 }
 
 export const STATUS_PRESTACAO_LABEL: Record<StatusPrestacao, string> = {
@@ -131,15 +215,15 @@ export const TIPO_PRESTACAO_LABEL: Record<TipoPrestacao, string> = {
   final: "Final",
 };
 
-// ----------------------------------------------------------------------------
+// ============================================================================
 // Listagem
-// ----------------------------------------------------------------------------
+// ============================================================================
 export async function listarPrestacoes(convenioId?: string): Promise<PrestacaoListItem[]> {
   const supabase = adminClient();
   let q = supabase
     .from("caritas_prestacoes_contas")
     .select(`
-      id, convenio_id, tipo, periodo_inicio, periodo_fim, status,
+      id, convenio_id, tipo, numero_parcela, periodo_inicio, periodo_fim, status,
       protocolo, protocolada_em, analisada_em, glosa_total, criado_em,
       convenio:caritas_convenios ( numero )
     `)
@@ -163,70 +247,56 @@ export async function listarPrestacoes(convenioId?: string): Promise<PrestacaoLi
   }));
 }
 
-// ----------------------------------------------------------------------------
-// Consolidado (para a tela de detalhe e impressão)
-// ----------------------------------------------------------------------------
+// ============================================================================
+// Consolidação (a peça grande)
+// ============================================================================
 export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolidada | null> {
   const supabase = adminClient();
 
-  const { data: prestacao, error } = await supabase
+  const { data: prest, error } = await supabase
     .from("caritas_prestacoes_contas")
     .select("*")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`Erro ao buscar prestação: ${error.message}`);
-  if (!prestacao) return null;
+  if (!prest) return null;
 
-  const convenioId: string = prestacao.convenio_id;
-  const inicio: string = prestacao.periodo_inicio;
-  const fim: string = prestacao.periodo_fim;
+  const convenioId: string = prest.convenio_id;
+  const inicio: string = prest.periodo_inicio;
+  const fim: string = prest.periodo_fim;
 
-  const [convRes, antesRes, periodoRes, categoriasRes, metasRes] = await Promise.all([
+  const [convRes, antesRes, periodoRes, categoriasRes] = await Promise.all([
     supabase
       .from("caritas_convenios")
       .select(`
-        id, numero, tipo, objeto, publico_alvo,
-        valor_total, valor_repasse, valor_contrapartida,
-        vigencia_inicio, vigencia_fim,
-        banco, agencia, conta_corrente, conta_aplicacao,
-        gestor_publico, gestor_osc,
-        osc:caritas_oscs ( nome, cnpj, responsavel ),
+        *,
+        osc:caritas_oscs (*),
         orgao:caritas_orgaos_concedentes ( nome, sigla, fundo )
       `)
       .eq("id", convenioId)
       .maybeSingle(),
-    // Saldo antes do período
     supabase
       .from("caritas_lancamentos")
       .select("tipo, valor, status")
       .eq("convenio_id", convenioId)
       .neq("status", "cancelado")
       .lt("data_lancamento", inicio),
-    // Lançamentos do período
     supabase
       .from("caritas_lancamentos")
       .select(`
         id, data_lancamento, data_pagamento, tipo, status, descricao,
-        fornecedor_nome, documento_numero, valor, glosa_valor,
-        categoria_id, meta_id,
-        categoria:caritas_categorias_despesa ( codigo, nome, grupo, valor_previsto ),
-        meta:caritas_metas ( codigo, titulo )
+        fornecedor_nome, fornecedor_documento, documento_numero, valor,
+        categoria_id,
+        categoria:caritas_categorias_despesa ( codigo, nome, grupo, valor_previsto )
       `)
       .eq("convenio_id", convenioId)
       .neq("status", "cancelado")
       .gte("data_lancamento", inicio)
       .lte("data_lancamento", fim)
       .order("data_lancamento"),
-    // Todas as categorias (para apresentar mesmo sem lançamento)
     supabase
       .from("caritas_categorias_despesa")
       .select("id, codigo, nome, grupo, valor_previsto, ordem")
-      .eq("convenio_id", convenioId)
-      .order("ordem"),
-    // Metas
-    supabase
-      .from("caritas_metas")
-      .select("id, codigo, titulo, indicador, quantidade_prevista, unidade_medida, ordem")
       .eq("convenio_id", convenioId)
       .order("ordem"),
   ]);
@@ -238,16 +308,16 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
   const pick = <T,>(v: T | T[] | null): T | null =>
     Array.isArray(v) ? (v[0] ?? null) : v;
 
-  // Saldo inicial
-  let saldo_inicial = 0;
+  // ====== Saldo do período anterior ======
+  let saldo_periodo_anterior = 0;
   for (const l of antesRes.data ?? []) {
     const v = Number(l.valor);
-    if (l.tipo === "repasse" || l.tipo === "rendimento") saldo_inicial += v;
-    else if (l.tipo === "despesa" && l.status !== "glosado") saldo_inicial -= v;
-    else if (l.tipo === "devolucao") saldo_inicial -= v;
+    if (l.tipo === "repasse" || l.tipo === "rendimento" || l.tipo === "saldo_abertura") saldo_periodo_anterior += v;
+    else if (l.tipo === "despesa" && l.status !== "glosado") saldo_periodo_anterior -= v;
+    else if (l.tipo === "devolucao") saldo_periodo_anterior -= v;
   }
 
-  // Lançamentos do período (enriquecidos)
+  // ====== Receita do período (A+B+C+D) ======
   type LancRow = {
     id: string;
     data_lancamento: string;
@@ -256,167 +326,276 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
     status: StatusLancamento;
     descricao: string;
     fornecedor_nome: string | null;
+    fornecedor_documento: string | null;
     documento_numero: string | null;
     valor: number | string;
-    glosa_valor: number | string | null;
     categoria_id: string | null;
-    meta_id: string | null;
     categoria: { codigo: string; nome: string; grupo: string | null; valor_previsto: number | string } | { codigo: string; nome: string; grupo: string | null; valor_previsto: number | string }[] | null;
-    meta: { codigo: string; titulo: string } | { codigo: string; titulo: string }[] | null;
+  };
+  const lancs = (periodoRes.data ?? []) as LancRow[];
+
+  let repasses = 0, rendimentos = 0, outras_rec = 0, recursos_osc = 0;
+  let saldo_abertura_periodo = 0;
+  for (const l of lancs) {
+    const v = Number(l.valor);
+    if (l.tipo === "repasse") repasses += v;
+    else if (l.tipo === "rendimento") rendimentos += v;
+    else if (l.tipo === "saldo_abertura") saldo_abertura_periodo += v;
+  }
+  // Se houver saldo_abertura no período, soma ao "saldo do período anterior"
+  const receita_E = saldo_periodo_anterior + saldo_abertura_periodo;
+
+  const receita: ReceitaSEMAS = {
+    repasses_municipais: repasses,
+    rendimentos_aplicacao: rendimentos,
+    recursos_osc,
+    outras_receitas: outras_rec,
+    saldo_periodo_anterior: receita_E,
+    total: repasses + rendimentos + recursos_osc + outras_rec + receita_E,
   };
 
-  const lancamentosDetalhados: LancamentoBalancete[] = ((periodoRes.data ?? []) as LancRow[]).map((r) => {
-    const c = pick(r.categoria);
-    const m = pick(r.meta);
-    return {
-      id: r.id,
-      data_lancamento: r.data_lancamento,
-      data_pagamento: r.data_pagamento,
-      tipo: r.tipo,
-      status: r.status,
-      descricao: r.descricao,
-      fornecedor_nome: r.fornecedor_nome,
-      documento_numero: r.documento_numero,
-      valor: Number(r.valor),
-      categoria_codigo: c?.codigo ?? null,
-      categoria_nome: c?.nome ?? null,
-      meta_codigo: m?.codigo ?? null,
-    };
-  });
-
-  // Totais e KPIs do período
-  let total_entradas = 0;
-  let total_saidas = 0;
-  let rendimentos = 0;
-  let glosa_total = 0;
-  let conciliados = 0;
-  for (const r of (periodoRes.data ?? []) as LancRow[]) {
-    const v = Number(r.valor);
-    if (r.tipo === "repasse") total_entradas += v;
-    else if (r.tipo === "rendimento") {
-      total_entradas += v;
-      rendimentos += v;
-    } else if (r.tipo === "despesa" && r.status !== "glosado") {
-      total_saidas += v;
-    } else if (r.tipo === "devolucao") {
-      total_saidas += v;
+  // ====== Despesa estruturada (1.x, 2.x, 3.x, 4.x, 5, 6, 7) ======
+  function despesasPorCodigo(prefix: string, codigosValidos: string[]): { total: number; linhas: LinhaDespesa[] } {
+    const linhas: LinhaDespesa[] = [];
+    let total = 0;
+    for (const cod of codigosValidos) {
+      const cat = categoriasRes.data?.find((c) => c.codigo === cod);
+      if (!cat) continue;
+      let valor = 0;
+      for (const l of lancs) {
+        if (l.tipo !== "despesa") continue;
+        if (l.status === "glosado" || l.status === "cancelado") continue;
+        if (l.categoria_id !== cat.id) continue;
+        valor += Number(l.valor);
+      }
+      total += valor;
+      linhas.push({
+        codigo: cat.codigo,
+        nome: cat.nome,
+        valor,
+        valor_ne: valor, // No modelo SEMAS, N.E. = Valor (igual ao executado)
+      });
     }
-    if (r.status === "glosado") {
-      glosa_total += Number(r.glosa_valor ?? r.valor);
-    }
-    if (r.status === "conciliado") conciliados += 1;
+    return { total, linhas };
   }
 
-  // Por rubrica (incluindo categorias sem lançamento)
-  const realizadoPorCategoria = new Map<string, { realizado: number; glosado: number; qtd: number }>();
-  for (const r of (periodoRes.data ?? []) as LancRow[]) {
-    if (r.tipo !== "despesa" || !r.categoria_id) continue;
-    const cur = realizadoPorCategoria.get(r.categoria_id) ?? { realizado: 0, glosado: 0, qtd: 0 };
-    if (r.status === "glosado") cur.glosado += Number(r.glosa_valor ?? r.valor);
-    else cur.realizado += Number(r.valor);
-    cur.qtd += 1;
-    realizadoPorCategoria.set(r.categoria_id, cur);
+  const rh = despesasPorCodigo("1.", ["1.1", "1.2", "1.3", "1.4", "1.5"]);
+  const materiais = despesasPorCodigo("2.", ["2.1", "2.2", "2.3", "2.4"]);
+  const servicos = despesasPorCodigo("3.", ["3.1", "3.2"]);
+  const locacao = despesasPorCodigo("4.", ["4.1", "4.2"]);
+
+  let outras = 0, devolvido = 0;
+  for (const l of lancs) {
+    if (l.tipo === "devolucao") devolvido += Number(l.valor);
+    if (l.tipo === "despesa" && !l.categoria_id && l.status !== "glosado") {
+      outras += Number(l.valor);
+    }
   }
 
-  const rubricas: RubricaExecucao[] = (categoriasRes.data ?? []).map((c) => {
-    const prev = Number(c.valor_previsto);
-    const r = realizadoPorCategoria.get(c.id) ?? { realizado: 0, glosado: 0, qtd: 0 };
+  const total_despesas_periodo = rh.total + materiais.total + servicos.total + locacao.total + outras + devolvido;
+  const saldo_proximo = receita.total - total_despesas_periodo;
+
+  const despesa: DespesaSEMAS = {
+    rh, materiais, servicos, locacao,
+    outras, outras_ne: outras,
+    devolvido, devolvido_ne: devolvido,
+    saldo_proximo, saldo_proximo_ne: saldo_proximo,
+    total: total_despesas_periodo + saldo_proximo,
+    total_ne: total_despesas_periodo + saldo_proximo,
+  };
+
+  // ====== Conciliação bancária ======
+  const conciliacao: ConciliacaoBancaria = {
+    data_extrato: fim,
+    saldo_extrato: saldo_proximo, // Assumindo extrato bate
+    creditos_pendentes_repasses: 0,
+    creditos_pendentes_rendimentos: 0,
+    creditos_pendentes_osc: 0,
+    creditos_pendentes_outras: 0,
+    total_creditos_pendentes: 0,
+    debitos_pendentes_rh: 0,
+    debitos_pendentes_materiais: 0,
+    debitos_pendentes_locacao: 0,
+    debitos_pendentes_servicos: 0,
+    debitos_pendentes_outras: 0,
+    total_debitos_pendentes: 0,
+    saldo_contabil: saldo_proximo,
+  };
+
+  // ====== Pagamentos por sub-seção ======
+  function linhasPagamento(grupoCodigo: string): LinhaPagamento[] {
+    return lancs
+      .filter((l) => l.tipo === "despesa" && l.status !== "glosado" && l.status !== "cancelado")
+      .filter((l) => {
+        const cat = pick(l.categoria);
+        return cat?.codigo?.startsWith(grupoCodigo) ?? false;
+      })
+      .map((l) => {
+        const cat = pick(l.categoria);
+        return {
+          data: l.data_lancamento,
+          credor: l.fornecedor_nome ?? "—",
+          cpf_cnpj: l.fornecedor_documento,
+          item_orcamento: cat?.nome ?? l.descricao,
+          nf_rec: l.documento_numero,
+          ob: null,
+          valor: Number(l.valor),
+        };
+      });
+  }
+
+  const pagamentos = {
+    rh: linhasPagamento("1."),
+    materiais: linhasPagamento("2."),
+    servicos: linhasPagamento("3."),
+    locacao: linhasPagamento("4."),
+    outras: lancs
+      .filter((l) => l.tipo === "despesa" && !l.categoria_id && l.status !== "glosado")
+      .map((l) => ({
+        data: l.data_lancamento,
+        credor: l.fornecedor_nome ?? "—",
+        cpf_cnpj: l.fornecedor_documento,
+        item_orcamento: l.descricao,
+        nf_rec: l.documento_numero,
+        ob: null,
+        valor: Number(l.valor),
+      })),
+    devolvidos: lancs
+      .filter((l) => l.tipo === "devolucao")
+      .map((l) => ({
+        data: l.data_lancamento,
+        credor: l.fornecedor_nome ?? "Município",
+        cpf_cnpj: l.fornecedor_documento,
+        item_orcamento: l.descricao,
+        nf_rec: l.documento_numero,
+        ob: null,
+        valor: Number(l.valor),
+      })),
+    total: total_despesas_periodo,
+  };
+
+  // ====== Acompanhamento da execução (Seção 4) ======
+  // Calcula meses entre vigencia_inicio e periodo_fim pra "acumulado"
+  const inicioVig = new Date(convRes.data.vigencia_inicio);
+  const fimPeriodo = new Date(fim);
+  const mesesAcumulados = Math.max(1,
+    (fimPeriodo.getFullYear() - inicioVig.getFullYear()) * 12 +
+    (fimPeriodo.getMonth() - inicioVig.getMonth()) + 1
+  );
+
+  // Busca tudo até o fim do período (incluindo período atual) pra calcular acumulado
+  const { data: acumuladoRes } = await supabase
+    .from("caritas_lancamentos")
+    .select("tipo, valor, status, categoria_id")
+    .eq("convenio_id", convenioId)
+    .neq("status", "cancelado")
+    .lte("data_lancamento", fim);
+
+  const acumuladoPorCategoria = new Map<string, number>();
+  for (const l of acumuladoRes ?? []) {
+    if (l.tipo !== "despesa" || !l.categoria_id) continue;
+    if (l.status === "glosado") continue;
+    acumuladoPorCategoria.set(l.categoria_id, (acumuladoPorCategoria.get(l.categoria_id) ?? 0) + Number(l.valor));
+  }
+
+  const linhasAcomp: LinhaAcompanhamento[] = (categoriasRes.data ?? []).map((c) => {
+    const previstoAnual = Number(c.valor_previsto);
+    const previstoMensal = previstoAnual / 12;
+    let executadoPeriodo = 0;
+    for (const l of lancs) {
+      if (l.tipo !== "despesa" || l.categoria_id !== c.id) continue;
+      if (l.status === "glosado" || l.status === "cancelado") continue;
+      executadoPeriodo += Number(l.valor);
+    }
+    const executadoAcumulado = acumuladoPorCategoria.get(c.id) ?? 0;
     return {
-      categoria_id: c.id,
       codigo: c.codigo,
       nome: c.nome,
-      grupo: c.grupo,
-      valor_previsto: prev,
-      valor_realizado: r.realizado,
-      valor_glosado: r.glosado,
-      saldo: prev - r.realizado,
-      pct: prev > 0 ? (r.realizado / prev) * 100 : 0,
-      qtd: r.qtd,
+      previsto_mensal: previstoMensal,
+      executado_periodo_concedente: executadoPeriodo,
+      executado_periodo_total: executadoPeriodo,
+      previsto_acumulado: previstoMensal * mesesAcumulados,
+      executado_acumulado_concedente: executadoAcumulado,
+      executado_acumulado_osc: 0,
+      executado_acumulado_total: executadoAcumulado,
     };
   });
 
-  // Por meta
-  const realizadoPorMeta = new Map<string, { valor: number; qtd: number }>();
-  for (const r of (periodoRes.data ?? []) as LancRow[]) {
-    if (!r.meta_id) continue;
-    if (r.status === "glosado" || r.status === "cancelado") continue;
-    const cur = realizadoPorMeta.get(r.meta_id) ?? { valor: 0, qtd: 0 };
-    cur.valor += Number(r.valor);
-    cur.qtd += 1;
-    realizadoPorMeta.set(r.meta_id, cur);
-  }
+  const totalPeriodoAcomp = linhasAcomp.reduce((s, l) => s + l.executado_periodo_total, 0);
+  const totalAcumuladoAcomp = linhasAcomp.reduce((s, l) => s + l.executado_acumulado_total, 0);
 
-  const metas: MetaExecucao[] = (metasRes.data ?? []).map((m) => {
-    const r = realizadoPorMeta.get(m.id) ?? { valor: 0, qtd: 0 };
-    const matchObj = m.titulo.match(/^(OBJETIVO\s+\d+)/i);
-    return {
-      id: m.id,
-      codigo: m.codigo,
-      titulo: m.titulo,
-      objetivo: matchObj ? matchObj[1].toUpperCase() : null,
-      indicador: m.indicador,
-      quantidade_prevista: m.quantidade_prevista !== null ? Number(m.quantidade_prevista) : null,
-      unidade_medida: m.unidade_medida,
-      valor_realizado: r.valor,
-      qtd_lancamentos: r.qtd,
-    };
-  });
-
-  const oscRow = pick(convRes.data.osc as { nome: string; cnpj: string; responsavel: string | null } | { nome: string; cnpj: string; responsavel: string | null }[] | null);
-  const orgaoRow = pick(convRes.data.orgao as { nome: string; sigla: string | null; fundo: string | null } | { nome: string; sigla: string | null; fundo: string | null }[] | null);
+  // ====== Monta retorno ======
+  const c = convRes.data;
+  const oscRow = pick(c.osc as Record<string, unknown> | Record<string, unknown>[] | null) as Record<string, unknown> | null;
+  const orgaoRow = pick(c.orgao as { nome: string; sigla: string | null; fundo: string | null } | { nome: string; sigla: string | null; fundo: string | null }[] | null);
 
   return {
     prestacao: {
-      id: prestacao.id,
-      tipo: prestacao.tipo,
-      periodo_inicio: prestacao.periodo_inicio,
-      periodo_fim: prestacao.periodo_fim,
-      status: prestacao.status,
-      protocolo: prestacao.protocolo,
-      protocolada_em: prestacao.protocolada_em,
-      analisada_em: prestacao.analisada_em,
-      parecer_tecnico: prestacao.parecer_tecnico,
-      glosa_total: Number(prestacao.glosa_total),
-      observacoes: prestacao.observacoes,
-      criado_em: prestacao.criado_em,
+      id: prest.id,
+      tipo: prest.tipo,
+      numero_parcela: prest.numero_parcela ?? null,
+      periodo_inicio: prest.periodo_inicio,
+      periodo_fim: prest.periodo_fim,
+      status: prest.status,
+      protocolo: prest.protocolo,
+      protocolada_em: prest.protocolada_em,
+      analisada_em: prest.analisada_em,
+      parecer_tecnico: prest.parecer_tecnico,
+      glosa_total: Number(prest.glosa_total),
+      observacoes: prest.observacoes,
+      criado_em: prest.criado_em,
     },
     convenio: {
-      id: convRes.data.id,
-      numero: convRes.data.numero,
-      tipo: convRes.data.tipo,
-      objeto: convRes.data.objeto,
-      publico_alvo: convRes.data.publico_alvo,
-      valor_total: Number(convRes.data.valor_total),
-      valor_repasse: Number(convRes.data.valor_repasse),
-      valor_contrapartida: Number(convRes.data.valor_contrapartida),
-      vigencia_inicio: convRes.data.vigencia_inicio,
-      vigencia_fim: convRes.data.vigencia_fim,
-      banco: convRes.data.banco,
-      agencia: convRes.data.agencia,
-      conta_corrente: convRes.data.conta_corrente,
-      conta_aplicacao: convRes.data.conta_aplicacao,
-      gestor_publico: convRes.data.gestor_publico,
-      gestor_osc: convRes.data.gestor_osc,
+      id: c.id,
+      numero: c.numero,
+      tipo: c.tipo,
+      objeto: c.objeto,
+      valor_total: Number(c.valor_total),
+      valor_repasse: Number(c.valor_repasse),
+      valor_contrapartida: Number(c.valor_contrapartida),
+      vigencia_inicio: c.vigencia_inicio,
+      vigencia_fim: c.vigencia_fim,
+      data_assinatura: c.data_assinatura,
+      banco: c.banco,
+      agencia: c.agencia,
+      conta_corrente: c.conta_corrente,
+      conta_aplicacao: c.conta_aplicacao,
+      gestor_publico: c.gestor_publico,
+      gestor_osc: c.gestor_osc,
+      gestor_osc_cpf: c.gestor_osc_cpf,
+      responsavel_legal_nome: c.responsavel_legal_nome,
+      responsavel_legal_cpf: c.responsavel_legal_cpf,
+      elaborador_nome: c.elaborador_nome,
+      elaborador_cpf: c.elaborador_cpf,
+      contabilista_nome: c.contabilista_nome,
+      contabilista_cpf: c.contabilista_cpf,
+      contabilista_crc: c.contabilista_crc,
+      responsavel_tecnico_nome: c.responsavel_tecnico_nome,
+      responsavel_tecnico_cpf: c.responsavel_tecnico_cpf,
+      responsavel_tecnico_email: c.responsavel_tecnico_email,
+      responsavel_tecnico_funcao: c.responsavel_tecnico_funcao,
+      nota_empenho_numero: c.nota_empenho_numero,
+      nota_empenho_valor: c.nota_empenho_valor !== null ? Number(c.nota_empenho_valor) : null,
     },
-    osc: { nome: oscRow?.nome ?? "", cnpj: oscRow?.cnpj ?? "", responsavel: oscRow?.responsavel ?? null },
+    osc: {
+      nome: String(oscRow?.nome ?? ""),
+      cnpj: String(oscRow?.cnpj ?? ""),
+      endereco: (oscRow?.endereco as string | null) ?? null,
+      cep: (oscRow?.cep as string | null) ?? null,
+      cidade: (oscRow?.cidade as string | null) ?? null,
+      estado: (oscRow?.estado as string | null) ?? null,
+      telefone: (oscRow?.telefone as string | null) ?? null,
+      email: (oscRow?.email as string | null) ?? null,
+    },
     orgao: { nome: orgaoRow?.nome ?? "", sigla: orgaoRow?.sigla ?? null, fundo: orgaoRow?.fundo ?? null },
-    resumo: {
-      saldo_inicial,
-      total_entradas,
-      total_saidas,
-      rendimentos,
-      saldo_final: saldo_inicial + total_entradas - total_saidas,
-      glosa_total,
-      qtd_lancamentos: lancamentosDetalhados.length,
+    receita,
+    despesa,
+    conciliacao,
+    pagamentos,
+    acompanhamento: {
+      linhas: linhasAcomp,
+      total_periodo: totalPeriodoAcomp,
+      total_acumulado: totalAcumuladoAcomp,
     },
-    rubricas,
-    metas,
-    conciliacao: {
-      total_lancamentos: lancamentosDetalhados.length,
-      conciliados,
-      pendentes: lancamentosDetalhados.length - conciliados,
-    },
-    lancamentos: lancamentosDetalhados,
-    glosados: lancamentosDetalhados.filter((l) => l.status === "glosado"),
   };
 }

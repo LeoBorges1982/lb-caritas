@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Wallet, Target, ListChecks, Receipt, AlertTriangle, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import {
   consolidarPrestacao,
   STATUS_PRESTACAO_LABEL,
@@ -8,9 +8,7 @@ import {
   TIPO_PRESTACAO_LABEL,
 } from "@/lib/prestacoes";
 import { listarAnexos } from "@/lib/anexos";
-import { ESCRITORIO } from "@/lib/constants";
-import { TIPO_LABEL, TIPO_SINAL, STATUS_LABEL as STATUS_LANC_LABEL } from "@/lib/lancamentos";
-import { formatBRL, formatDate, formatCNPJ, cn } from "@/lib/utils";
+import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
 import BotaoImprimir from "@/components/BotaoImprimir";
 import AcoesPrestacao from "@/components/AcoesPrestacao";
 import AnexosBloco from "@/components/AnexosBloco";
@@ -27,9 +25,10 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
   if (!c) notFound();
 
   const anexos = await listarAnexos("prestacao", id);
+  const ehFinal = c.prestacao.tipo === "final";
 
   return (
-    <div className="balancete max-w-5xl mx-auto space-y-5">
+    <div className="balancete max-w-6xl mx-auto space-y-4 text-[10pt]">
       {/* Header (não imprime) */}
       <div className="flex items-center justify-between print:hidden">
         <Link href="/prestacoes" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#1e3a8a]">
@@ -43,16 +42,11 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Status:</span>
-            <span className={cn(
-              "inline-flex px-2.5 py-1 rounded-full text-xs font-medium border",
-              STATUS_PRESTACAO_CORES[c.prestacao.status]
-            )}>
+            <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-medium border", STATUS_PRESTACAO_CORES[c.prestacao.status])}>
               {STATUS_PRESTACAO_LABEL[c.prestacao.status]}
             </span>
             {c.prestacao.protocolo && (
-              <span className="text-xs text-slate-600">
-                · Protocolo <span className="font-mono">{c.prestacao.protocolo}</span>
-              </span>
+              <span className="text-xs text-slate-600">· Protocolo <span className="font-mono">{c.prestacao.protocolo}</span></span>
             )}
           </div>
         </div>
@@ -60,252 +54,331 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
       </div>
 
       {/* ============================================================ */}
-      {/* CABEÇALHO DO RELATÓRIO (imprime) */}
+      {/* CABEÇALHO OFICIAL */}
       {/* ============================================================ */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm print:border-0 print:shadow-none print:p-0">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-              {ESCRITORIO.nomeFantasia} · {ESCRITORIO.crc}
-            </div>
-            <h1 className="text-xl font-bold text-slate-900">
-              Prestação de Contas {TIPO_PRESTACAO_LABEL[c.prestacao.tipo]}
+      <div className="bg-white border border-slate-400 print:border-black print:rounded-none rounded">
+        <div className="grid grid-cols-[1fr_180px] border-b border-slate-400 print:border-black">
+          <div className="p-3 flex items-center justify-center text-center">
+            <h1 className="text-base font-bold text-slate-900 uppercase tracking-wide">
+              Relatório de Execução Financeira
             </h1>
-            <div className="text-sm text-slate-700 mt-2">
-              Convênio <span className="font-mono font-semibold">{c.convenio.numero}</span>
-              {c.orgao.sigla && <span> · {c.orgao.sigla}</span>}
-            </div>
-            <div className="text-sm text-slate-600">{c.osc.nome}</div>
-            <div className="text-xs text-slate-500 mt-1 max-w-2xl">{c.convenio.objeto}</div>
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-[10px] uppercase tracking-wider text-slate-500">Período</div>
-            <div className="text-sm font-semibold text-slate-800">
-              {formatDate(c.prestacao.periodo_inicio)} – {formatDate(c.prestacao.periodo_fim)}
+          <div className="border-l border-slate-400 print:border-black grid grid-cols-2 text-[9pt]">
+            <div className="p-2 border-r border-b border-slate-400 print:border-black">Final</div>
+            <div className="p-2 border-b border-slate-400 print:border-black text-center font-bold">
+              {ehFinal ? "X" : ""}
             </div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-500 mt-2">Emitido em</div>
-            <div className="text-sm text-slate-800">{formatDate(new Date(), "dd/MM/yyyy")}</div>
+            <div className="p-2 border-r border-b border-slate-400 print:border-black">Parcial</div>
+            <div className="p-2 border-b border-slate-400 print:border-black text-center font-bold">
+              {ehFinal ? "" : "X"}
+            </div>
+            <div className="p-2 border-r border-slate-400 print:border-black">Parcela</div>
+            <div className="p-2 text-center font-bold">
+              {c.prestacao.numero_parcela ? `${c.prestacao.numero_parcela}ª` : "—"}
+            </div>
           </div>
+        </div>
+        <div className="grid grid-cols-[140px_1fr] border-b border-slate-400 print:border-black">
+          <div className="p-2 border-r border-slate-400 print:border-black text-[9pt]">Período</div>
+          <div className="p-2 font-semibold">{formatDate(c.prestacao.periodo_inicio)} à {formatDate(c.prestacao.periodo_fim)}</div>
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* 1. IDENTIFICAÇÃO */}
+      {/* 1 — DADOS DA PARCEIRA */}
       {/* ============================================================ */}
-      <Secao titulo="1. Identificação">
-        <div className="grid gap-4 md:grid-cols-2 text-sm">
-          <Bloco titulo="OSC">
-            <div className="font-medium text-slate-800">{c.osc.nome}</div>
-            <div className="text-slate-600 text-xs">CNPJ {formatCNPJ(c.osc.cnpj)}</div>
-            {c.osc.responsavel && (
-              <div className="text-slate-600 text-xs mt-1">Responsável: {c.osc.responsavel}</div>
-            )}
-            {c.convenio.gestor_osc && (
-              <div className="text-slate-600 text-xs">Gestor OSC: {c.convenio.gestor_osc}</div>
-            )}
-          </Bloco>
-          <Bloco titulo="Órgão concedente">
-            <div className="font-medium text-slate-800">
-              {c.orgao.sigla ? `${c.orgao.sigla} — ` : ""}{c.orgao.nome}
-            </div>
-            {c.orgao.fundo && <div className="text-slate-600 text-xs mt-1">{c.orgao.fundo}</div>}
-            {c.convenio.gestor_publico && (
-              <div className="text-slate-600 text-xs mt-1">Gestor público: {c.convenio.gestor_publico}</div>
-            )}
-          </Bloco>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3 text-sm mt-3">
-          <Bloco titulo="Vigência">
-            <div className="text-slate-800">{formatDate(c.convenio.vigencia_inicio)} → {formatDate(c.convenio.vigencia_fim)}</div>
-          </Bloco>
-          <Bloco titulo="Valor total do convênio">
-            <div className="font-semibold text-slate-900">{formatBRL(c.convenio.valor_total)}</div>
-            <div className="text-slate-600 text-xs">
-              Repasse {formatBRL(c.convenio.valor_repasse)} · Contrapartida {formatBRL(c.convenio.valor_contrapartida)}
-            </div>
-          </Bloco>
-          <Bloco titulo="Conta bancária exclusiva (art. 51)">
-            {c.convenio.banco && <div className="text-slate-800 text-xs">{c.convenio.banco}</div>}
-            {c.convenio.agencia && <div className="text-slate-600 text-xs">Ag. {c.convenio.agencia}</div>}
-            {c.convenio.conta_corrente && <div className="text-slate-600 text-xs">C/C {c.convenio.conta_corrente}</div>}
-            {c.convenio.conta_aplicacao && <div className="text-slate-600 text-xs">Aplic. {c.convenio.conta_aplicacao}</div>}
-          </Bloco>
-        </div>
-      </Secao>
+      <SecaoTitulo numero="1">Dados da Parceira</SecaoTitulo>
+      <div className="border border-slate-400 print:border-black grid grid-cols-[80px_1fr_60px_1fr_60px_1fr] text-[9pt]">
+        <Cell label>OSC:</Cell>
+        <Cell colSpan={3}>{c.osc.nome}</Cell>
+        <Cell label>CNPJ:</Cell>
+        <Cell>{c.osc.cnpj ? formatCNPJ(c.osc.cnpj) : "—"}</Cell>
+
+        <Cell label>Endereço:</Cell>
+        <Cell colSpan={3}>{c.osc.endereco ?? "—"}</Cell>
+        <Cell label>CEP:</Cell>
+        <Cell>{c.osc.cep ?? "—"}</Cell>
+
+        <Cell label>Município</Cell>
+        <Cell>{c.osc.cidade ?? "—"}</Cell>
+        <Cell label>Telefone:</Cell>
+        <Cell>{c.osc.telefone ?? "—"}</Cell>
+        <Cell label>E-mail:</Cell>
+        <Cell>{c.osc.email ?? "—"}</Cell>
+
+        <Cell label>Resp. Técnico:</Cell>
+        <Cell>{c.convenio.responsavel_tecnico_nome ?? "—"}</Cell>
+        <Cell colSpan={2}>Função: {c.convenio.responsavel_tecnico_funcao ?? "—"}</Cell>
+        <Cell colSpan={2}>E-mail: {c.convenio.responsavel_tecnico_email ?? "—"}</Cell>
+
+        <Cell label>CPF:</Cell>
+        <Cell>{c.convenio.responsavel_tecnico_cpf ?? "—"}</Cell>
+        <Cell colSpan={4}></Cell>
+      </div>
 
       {/* ============================================================ */}
-      {/* 2. RESUMO FINANCEIRO */}
+      {/* 2 — DADOS DO INSTRUMENTO JURÍDICO */}
       {/* ============================================================ */}
-      <Secao titulo="2. Resumo financeiro do período">
-        <div className="grid gap-3 md:grid-cols-4 print:grid-cols-4 print:gap-2">
-          <Card titulo="Saldo inicial" valor={formatBRL(c.resumo.saldo_inicial)} icon={<Wallet size={12} />} />
-          <Card titulo="Entradas" valor={formatBRL(c.resumo.total_entradas)} cor="text-emerald-700" sub={c.resumo.rendimentos > 0 ? `Rendimentos ${formatBRL(c.resumo.rendimentos)}` : undefined} />
-          <Card titulo="Saídas" valor={formatBRL(c.resumo.total_saidas)} cor="text-red-600" sub={c.resumo.glosa_total > 0 ? `Glosa ${formatBRL(c.resumo.glosa_total)}` : undefined} />
-          <Card titulo="Saldo final" valor={formatBRL(c.resumo.saldo_final)} cor="text-[#1e3a8a]" destaque />
-        </div>
-      </Secao>
+      <SecaoTitulo numero="2">Dados do Instrumento Jurídico</SecaoTitulo>
+      <div className="border border-slate-400 print:border-black grid grid-cols-[100px_140px_140px_1fr_120px_160px] text-[9pt]">
+        <CellH>Processo</CellH>
+        <CellH>Termo de Colaboração</CellH>
+        <CellH>Termo Aditivo nº</CellH>
+        <CellH>Título da Parceria (Objeto)</CellH>
+        <CellH>Valor Global (R$)</CellH>
+        <CellH>Vigência</CellH>
+
+        <Cell>2024/103819</Cell>
+        <Cell>{c.convenio.numero}</Cell>
+        <Cell>—</Cell>
+        <Cell>{c.convenio.objeto}</Cell>
+        <Cell className="text-right font-semibold">{formatBRL(c.convenio.valor_total)}</Cell>
+        <Cell className="text-center">{formatDate(c.convenio.vigencia_inicio)} à {formatDate(c.convenio.vigencia_fim)}</Cell>
+      </div>
 
       {/* ============================================================ */}
-      {/* 3. EXECUÇÃO POR RUBRICA */}
+      {/* 3 — DEMONSTRATIVOS FINANCEIROS */}
       {/* ============================================================ */}
-      <Secao titulo="3. Execução por rubrica" icon={<ListChecks size={14} />}>
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-slate-300">
-              <th className="text-left py-1.5 font-semibold text-slate-600 uppercase w-16">Cód.</th>
-              <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Rubrica</th>
-              <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Grupo</th>
-              <th className="text-right py-1.5 font-semibold text-slate-600 uppercase">Previsto</th>
-              <th className="text-right py-1.5 font-semibold text-slate-600 uppercase">Realizado</th>
-              <th className="text-right py-1.5 font-semibold text-slate-600 uppercase">Glosa</th>
-              <th className="text-right py-1.5 font-semibold text-slate-600 uppercase">Saldo</th>
-              <th className="text-right py-1.5 font-semibold text-slate-600 uppercase w-12">%</th>
-            </tr>
-          </thead>
-          <tbody>
-            {c.rubricas.map((r) => (
-              <tr key={r.codigo} className="border-b border-slate-100 last:border-0">
-                <td className="py-1.5 font-mono text-slate-700">{r.codigo}</td>
-                <td className="py-1.5 text-slate-800">
-                  {r.nome}
-                  {r.qtd > 0 && <span className="text-slate-500"> ({r.qtd})</span>}
-                </td>
-                <td className="py-1.5 text-slate-600 text-[10pt] print:text-[8pt]">{r.grupo ?? "—"}</td>
-                <td className="py-1.5 text-right tabular-nums">{formatBRL(r.valor_previsto)}</td>
-                <td className="py-1.5 text-right tabular-nums font-medium">{formatBRL(r.valor_realizado)}</td>
-                <td className={cn("py-1.5 text-right tabular-nums", r.valor_glosado > 0 && "text-red-600 font-medium")}>
-                  {r.valor_glosado > 0 ? formatBRL(r.valor_glosado) : "—"}
-                </td>
-                <td className={cn("py-1.5 text-right tabular-nums", r.saldo < 0 && "text-red-600")}>
-                  {formatBRL(r.saldo)}
-                </td>
-                <td className="py-1.5 text-right text-slate-600">{r.pct.toFixed(0)}%</td>
-              </tr>
-            ))}
-            <tr className="border-t-2 border-slate-400 font-bold">
-              <td colSpan={3} className="py-1.5">Total</td>
-              <td className="py-1.5 text-right tabular-nums">{formatBRL(c.rubricas.reduce((s, r) => s + r.valor_previsto, 0))}</td>
-              <td className="py-1.5 text-right tabular-nums">{formatBRL(c.rubricas.reduce((s, r) => s + r.valor_realizado, 0))}</td>
-              <td className="py-1.5 text-right tabular-nums">{formatBRL(c.rubricas.reduce((s, r) => s + r.valor_glosado, 0))}</td>
-              <td className="py-1.5 text-right tabular-nums">{formatBRL(c.rubricas.reduce((s, r) => s + r.saldo, 0))}</td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
-      </Secao>
+      <SecaoTitulo>3 - Demonstrativos Financeiros</SecaoTitulo>
+
+      {/* 3.1 Receita e Despesa */}
+      <SecaoSubtitulo>3.1 — Demonstrativo da Receita e Despesa</SecaoSubtitulo>
+      <div className="border border-slate-400 print:border-black grid grid-cols-[1fr_120px_1fr_120px_120px] text-[9pt]">
+        <CellH>Receita</CellH>
+        <CellH className="text-right">Valor</CellH>
+        <CellH>Despesa</CellH>
+        <CellH className="text-right">Valor</CellH>
+        <CellH className="text-right">N.E.</CellH>
+
+        <Cell>(A) Repasses Municipais no Período</Cell>
+        <Cell className="text-right">{formatBRL(c.receita.repasses_municipais)}</Cell>
+        <Cell label className="bg-slate-50">(1) Recursos Humanos</Cell>
+        <Cell className="text-right font-semibold">{formatBRL(c.despesa.rh.total)}</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.rh.total)}</Cell>
+
+        <Cell>(B) Rendimentos de Repasses Municipais</Cell>
+        <Cell className="text-right">{formatBRL(c.receita.rendimentos_aplicacao)}</Cell>
+        {c.despesa.rh.linhas.slice(0, 1).map((l, i) => (
+          <SubRubrica key={i} l={l} />
+        ))}
+
+        <Cell>(C) Recursos da OSC</Cell>
+        <Cell className="text-right">{formatBRL(c.receita.recursos_osc)}</Cell>
+        {c.despesa.rh.linhas[1] ? <SubRubrica l={c.despesa.rh.linhas[1]} /> : <EmptyRub />}
+
+        <Cell>(D) Outras Receitas</Cell>
+        <Cell className="text-right">{formatBRL(c.receita.outras_receitas)}</Cell>
+        {c.despesa.rh.linhas[2] ? <SubRubrica l={c.despesa.rh.linhas[2]} /> : <EmptyRub />}
+
+        <Cell>(E) Saldo do Período Anterior</Cell>
+        <Cell className="text-right">{formatBRL(c.receita.saldo_periodo_anterior)}</Cell>
+        {c.despesa.rh.linhas[3] ? <SubRubrica l={c.despesa.rh.linhas[3]} /> : <EmptyRub />}
+
+        <Cell label className="bg-slate-50">Total (A+B+C+D+E)</Cell>
+        <Cell className="text-right font-bold bg-slate-50">{formatBRL(c.receita.total)}</Cell>
+        {c.despesa.rh.linhas[4] ? <SubRubrica l={c.despesa.rh.linhas[4]} /> : <EmptyRub />}
+
+        <Cell colSpan={2}></Cell>
+        <Cell label className="bg-slate-50">(2) Materiais de Consumo</Cell>
+        <Cell className="text-right font-semibold">{formatBRL(c.despesa.materiais.total)}</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.materiais.total)}</Cell>
+
+        {c.despesa.materiais.linhas.map((l, i) => (
+          <>
+            <Cell colSpan={2}></Cell>
+            <SubRubrica key={`m${i}`} l={l} />
+          </>
+        ))}
+
+        <Cell colSpan={2}></Cell>
+        <Cell label className="bg-slate-50">(3) Prestação de Serviços</Cell>
+        <Cell className="text-right font-semibold">{formatBRL(c.despesa.servicos.total)}</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.servicos.total)}</Cell>
+
+        {c.despesa.servicos.linhas.map((l, i) => (
+          <>
+            <Cell colSpan={2}></Cell>
+            <SubRubrica key={`s${i}`} l={l} />
+          </>
+        ))}
+
+        <Cell colSpan={2}></Cell>
+        <Cell label className="bg-slate-50">(4) Locação de Bens</Cell>
+        <Cell className="text-right font-semibold">{formatBRL(c.despesa.locacao.total)}</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.locacao.total)}</Cell>
+
+        {c.despesa.locacao.linhas.map((l, i) => (
+          <>
+            <Cell colSpan={2}></Cell>
+            <SubRubrica key={`l${i}`} l={l} />
+          </>
+        ))}
+
+        <Cell colSpan={2}></Cell>
+        <Cell>(5) Outras Despesas</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.outras)}</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.outras_ne)}</Cell>
+
+        <Cell colSpan={2}></Cell>
+        <Cell>(6) Valores Devolvidos ao Município</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.devolvido)}</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.devolvido_ne)}</Cell>
+
+        <Cell colSpan={2}></Cell>
+        <Cell>(7) Saldo para o Próximo Período</Cell>
+        <Cell className="text-right font-semibold">{formatBRL(c.despesa.saldo_proximo)}</Cell>
+        <Cell className="text-right">{formatBRL(c.despesa.saldo_proximo_ne)}</Cell>
+
+        <Cell colSpan={2}></Cell>
+        <Cell label className="bg-slate-100">Total (1+2+3+4+5+6+7)</Cell>
+        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.despesa.total)}</Cell>
+        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.despesa.total_ne)}</Cell>
+      </div>
+
+      {/* 3.2 Conciliação Bancária */}
+      <SecaoSubtitulo>3.2 - Conciliação Bancária</SecaoSubtitulo>
+      <div className="border border-slate-400 print:border-black grid grid-cols-[80px_1fr_100px_140px_120px] text-[9pt]">
+        <CellH>Banco</CellH>
+        <CellH>{c.convenio.banco ?? "—"}</CellH>
+        <CellH>Agência: {c.convenio.agencia ?? "—"}</CellH>
+        <CellH>Conta Bancária:</CellH>
+        <CellH>{c.convenio.conta_corrente ?? "—"}</CellH>
+
+        <Cell colSpan={4}>(A) Saldo no Extrato Bancário em: {formatDate(c.conciliacao.data_extrato)}</Cell>
+        <Cell className="text-right">{formatBRL(c.conciliacao.saldo_extrato)}</Cell>
+
+        <Cell label colSpan={5}>(B) Total de Créditos Pendentes</Cell>
+        <LinhaPenden label="Repasses Municipais no Período" valor={c.conciliacao.creditos_pendentes_repasses} />
+        <LinhaPenden label="Rendimentos de Repasses Municipais" valor={c.conciliacao.creditos_pendentes_rendimentos} />
+        <LinhaPenden label="Recursos da OSC" valor={c.conciliacao.creditos_pendentes_osc} />
+        <LinhaPenden label="Outras Receitas (Especificar em nota explicativa)" valor={c.conciliacao.creditos_pendentes_outras} />
+
+        <Cell label colSpan={5}>(C) Total de Débitos Pendentes</Cell>
+        <LinhaPenden label="Recursos Humanos" valor={c.conciliacao.debitos_pendentes_rh} />
+        <LinhaPenden label="Materiais de Consumo" valor={c.conciliacao.debitos_pendentes_materiais} />
+        <LinhaPenden label="Locação de Bens" valor={c.conciliacao.debitos_pendentes_locacao} />
+        <LinhaPenden label="Prestação de Serviços" valor={c.conciliacao.debitos_pendentes_servicos} />
+        <LinhaPenden label="Outras Despesas (especificar em nota explicativa)" valor={c.conciliacao.debitos_pendentes_outras} />
+
+        <Cell label colSpan={4} className="bg-slate-100">(A+B+C) = Saldo Contábil em: {formatDate(c.conciliacao.data_extrato)}</Cell>
+        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.conciliacao.saldo_contabil)}</Cell>
+      </div>
+
+      {/* 3.3 Relação de Pagamentos */}
+      <SecaoSubtitulo>3.3 - Relação de Pagamentos</SecaoSubtitulo>
+
+      <TabelaPagamentos titulo="3.3.1 — Recursos Humanos" linhas={c.pagamentos.rh} colItem="Itens de Orçamento" />
+      <TabelaPagamentos titulo="3.3.2 — Materiais de Consumo" linhas={c.pagamentos.materiais} colItem="Itens de Orçamento" />
+      <TabelaPagamentos titulo="3.3.3 — Prestação de Serviços" linhas={c.pagamentos.servicos} colItem="Itens de Orçamento" />
+      <TabelaPagamentos titulo="3.3.4 — Locação de Bens" linhas={c.pagamentos.locacao} colItem="Itens de Orçamento" />
+      <TabelaPagamentos titulo="3.3.5 — Outras Despesas" linhas={c.pagamentos.outras} colItem="Descrição" />
+      <TabelaPagamentos titulo="3.3.6 — Valores Devolvidos ao Município" linhas={c.pagamentos.devolvidos} colItem="Motivo" />
+
+      <div className="border border-slate-400 print:border-black grid grid-cols-[1fr_140px] text-[9pt] bg-slate-100">
+        <Cell label>Total Geral (3.3.1+3.3.2+3.3.3+3.3.4+3.3.5+3.3.6)</Cell>
+        <Cell className="text-right font-bold">{formatBRL(c.pagamentos.total)}</Cell>
+      </div>
+
+      {/* 3.4 Bens Permanentes */}
+      <SecaoSubtitulo>3.4 — Relação de Bens Permanentes Adquiridos</SecaoSubtitulo>
+      <div className="border border-slate-400 print:border-black grid grid-cols-4 text-[9pt]">
+        <CellH>Data</CellH>
+        <CellH>Fonte de Recursos</CellH>
+        <CellH className="text-right">Valor Unitário (R$)</CellH>
+        <CellH className="text-right">Valor Total (R$)</CellH>
+        <Cell colSpan={4} className="text-center text-slate-500 italic">Nenhum bem permanente adquirido no período.</Cell>
+      </div>
 
       {/* ============================================================ */}
-      {/* 4. EXECUÇÃO DAS METAS */}
+      {/* 4 — ACOMPANHAMENTO DA EXECUÇÃO FINANCEIRA */}
       {/* ============================================================ */}
-      <Secao titulo="4. Execução das metas (físico-financeira)" icon={<Target size={14} />}>
-        <div className="space-y-2">
-          {c.metas.map((m) => (
-            <div key={m.id} className="border border-slate-200 rounded-lg p-3 text-xs print:rounded-none print:border-slate-300">
-              <div className="flex items-start gap-2">
-                <span className="bg-slate-100 text-slate-700 font-mono font-bold px-1.5 py-0.5 rounded text-[10pt] shrink-0">{m.codigo}</span>
-                <div className="flex-1">
-                  <div className="font-semibold text-slate-800 text-[11pt] print:text-[10pt]">
-                    {m.titulo.replace(/^OBJETIVO\s+\d+\s*[·\-]\s*/i, "")}
-                  </div>
-                  {m.indicador && <div className="text-slate-600 mt-0.5"><strong>Indicador:</strong> {m.indicador}</div>}
-                  {m.quantidade_prevista !== null && m.unidade_medida && (
-                    <div className="text-slate-600">
-                      <strong>Meta física prevista:</strong> {m.quantidade_prevista.toLocaleString("pt-BR")} {m.unidade_medida}
-                    </div>
-                  )}
-                  <div className="text-slate-700 mt-1">
-                    <strong>Lançamentos vinculados:</strong> {m.qtd_lancamentos}
-                    {m.valor_realizado > 0 && <span> · Total executado: {formatBRL(m.valor_realizado)}</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-[10pt] print:text-[8pt] text-slate-500 italic mt-3">
-          Execução física detalhada conforme relatório técnico anexo (listas de presença, atas e registros fotográficos).
-        </p>
-      </Secao>
+      <SecaoTitulo numero="4">Acompanhamento da Execução Financeira</SecaoTitulo>
+      <div className="border border-slate-400 print:border-black grid grid-cols-[140px_1fr_100px_100px_100px_100px_100px_100px_100px] text-[9pt]">
+        <CellH rowSpan={2}>Descrição</CellH>
+        <CellH rowSpan={2}></CellH>
+        <CellH rowSpan={2}>Previsto Mensal</CellH>
+        <CellH colSpan={2}>Realizado no Período (R$)</CellH>
+        <CellH rowSpan={2}>Previsto Acumulado</CellH>
+        <CellH colSpan={3}>Realizado até o Período (R$)</CellH>
+
+        <CellH>Executado Concedente</CellH>
+        <CellH>Total</CellH>
+        <CellH>Executado Concedente</CellH>
+        <CellH>OSC</CellH>
+        <CellH>Total</CellH>
+
+        {c.acompanhamento.linhas.map((l) => (
+          <>
+            <Cell key={`${l.codigo}-cod`} className="font-mono">{l.codigo}</Cell>
+            <Cell key={`${l.codigo}-nome`}>{l.nome}</Cell>
+            <Cell key={`${l.codigo}-pm`} className="text-right">{formatBRL(l.previsto_mensal)}</Cell>
+            <Cell key={`${l.codigo}-epc`} className="text-right">{formatBRL(l.executado_periodo_concedente)}</Cell>
+            <Cell key={`${l.codigo}-ept`} className="text-right font-semibold">{formatBRL(l.executado_periodo_total)}</Cell>
+            <Cell key={`${l.codigo}-pa`} className="text-right">{formatBRL(l.previsto_acumulado)}</Cell>
+            <Cell key={`${l.codigo}-eac`} className="text-right">{formatBRL(l.executado_acumulado_concedente)}</Cell>
+            <Cell key={`${l.codigo}-eao`} className="text-right">{formatBRL(l.executado_acumulado_osc)}</Cell>
+            <Cell key={`${l.codigo}-eat`} className="text-right font-semibold">{formatBRL(l.executado_acumulado_total)}</Cell>
+          </>
+        ))}
+
+        <Cell label colSpan={4} className="bg-slate-100">Total das Despesas</Cell>
+        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.acompanhamento.total_periodo)}</Cell>
+        <Cell colSpan={3} className="bg-slate-100"></Cell>
+        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.acompanhamento.total_acumulado)}</Cell>
+      </div>
 
       {/* ============================================================ */}
-      {/* 5. CONCILIAÇÃO BANCÁRIA */}
+      {/* 5 — NOTAS EXPLICATIVAS */}
       {/* ============================================================ */}
-      <Secao titulo="5. Conciliação bancária" icon={<CheckCircle2 size={14} />}>
-        <div className="grid gap-3 md:grid-cols-3 print:grid-cols-3 print:gap-2">
-          <Card titulo="Total lançamentos" valor={String(c.conciliacao.total_lancamentos)} />
-          <Card titulo="Conciliados" valor={String(c.conciliacao.conciliados)} cor="text-emerald-700" />
-          <Card titulo="Pendentes" valor={String(c.conciliacao.pendentes)} cor={c.conciliacao.pendentes > 0 ? "text-amber-600" : "text-slate-700"} />
-        </div>
-        {c.conciliacao.pendentes > 0 && (
-          <div className="mt-3 bg-amber-50 border border-amber-200 rounded p-2 text-[11pt] print:text-[9pt] text-amber-900">
-            ⚠️ Existem {c.conciliacao.pendentes} lançamentos não conciliados com o extrato bancário no período.
-          </div>
+      <SecaoTitulo numero="5">Notas Explicativas (N.E.)</SecaoTitulo>
+      <div className="border border-slate-400 print:border-black p-3 text-[9pt] space-y-2">
+        <p>1-(3.2) Utilidades Públicas — Neste Campo indicar o valor referente a despesa com energia elétrica, água e esgoto, gás, telefone e internet.</p>
+        {c.prestacao.observacoes && (
+          <p className="whitespace-pre-line text-slate-700">{c.prestacao.observacoes}</p>
         )}
-      </Secao>
+        <p className="italic text-slate-500">* Neste campo a OSC deverá inserir notas explicativas contendo informações relevantes que complementem a compreensão das informações contidas na planilha.</p>
+      </div>
 
       {/* ============================================================ */}
-      {/* 6. MOVIMENTAÇÃO DETALHADA */}
+      {/* 6 — ASSINATURAS */}
       {/* ============================================================ */}
-      <Secao titulo={`6. Movimentação detalhada · ${c.lancamentos.length} lançamentos`} icon={<Receipt size={14} />}>
-        {c.lancamentos.length === 0 ? (
-          <p className="text-sm text-slate-500">Sem movimentação no período.</p>
-        ) : (
-          <table className="w-full text-xs print:text-[8pt]">
-            <thead>
-              <tr className="border-b border-slate-300">
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Data</th>
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Descrição</th>
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Fornecedor</th>
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Doc.</th>
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Rubrica</th>
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Meta</th>
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Tipo</th>
-                <th className="text-left py-1.5 font-semibold text-slate-600 uppercase">Status</th>
-                <th className="text-right py-1.5 font-semibold text-slate-600 uppercase">Valor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {c.lancamentos.map((l) => (
-                <tr key={l.id} className="border-b border-slate-100 last:border-0">
-                  <td className="py-1.5 whitespace-nowrap text-slate-700">{formatDate(l.data_lancamento)}</td>
-                  <td className="py-1.5 text-slate-800 max-w-[180px] truncate" title={l.descricao}>{l.descricao}</td>
-                  <td className="py-1.5 text-slate-700 max-w-[120px] truncate">{l.fornecedor_nome ?? "—"}</td>
-                  <td className="py-1.5 text-slate-700">{l.documento_numero ?? "—"}</td>
-                  <td className="py-1.5 text-slate-700 font-mono">{l.categoria_codigo ?? "—"}</td>
-                  <td className="py-1.5 text-slate-700 font-mono">{l.meta_codigo ?? "—"}</td>
-                  <td className="py-1.5 text-slate-700">{TIPO_LABEL[l.tipo]}</td>
-                  <td className="py-1.5 text-slate-700">{STATUS_LANC_LABEL[l.status]}</td>
-                  <td className={cn(
-                    "py-1.5 text-right font-semibold tabular-nums whitespace-nowrap",
-                    TIPO_SINAL[l.tipo] === "+" ? "text-emerald-700" : "text-slate-800"
-                  )}>
-                    {TIPO_SINAL[l.tipo] !== "·" ? TIPO_SINAL[l.tipo] : ""}{formatBRL(l.valor)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Secao>
+      <SecaoTitulo numero="6">Assinaturas</SecaoTitulo>
+      <div className="border border-slate-400 print:border-black grid grid-cols-[160px_1fr_100px_140px_80px_1fr] text-[9pt]">
+        <CellH colSpan={6}>Responsável da OSC Gestor</CellH>
+        <Cell label>Nome:</Cell>
+        <Cell>{c.convenio.gestor_osc ?? "—"}</Cell>
+        <Cell label>CPF nº</Cell>
+        <Cell>{c.convenio.gestor_osc_cpf ?? "—"}</Cell>
+        <Cell label>Data</Cell>
+        <Cell>{formatDate(c.prestacao.criado_em)} <span className="text-slate-400 ml-2">Assinatura</span></Cell>
+
+        <CellH colSpan={6}>Responsável pela Elaboração</CellH>
+        <Cell label>Nome:</Cell>
+        <Cell>{c.convenio.elaborador_nome ?? "—"}</Cell>
+        <Cell label>CPF nº</Cell>
+        <Cell>{c.convenio.elaborador_cpf ?? "—"}</Cell>
+        <Cell label>Data</Cell>
+        <Cell>{formatDate(c.prestacao.criado_em)} <span className="text-slate-400 ml-2">Assinatura</span></Cell>
+
+        <CellH colSpan={6}>Responsável Legal da OSC</CellH>
+        <Cell label>Nome:</Cell>
+        <Cell>{c.convenio.responsavel_legal_nome ?? "—"}</Cell>
+        <Cell label>CPF nº</Cell>
+        <Cell>{c.convenio.responsavel_legal_cpf ?? "—"}</Cell>
+        <Cell label>Data</Cell>
+        <Cell>{formatDate(c.prestacao.criado_em)} <span className="text-slate-400 ml-2">Assinatura</span></Cell>
+
+        <CellH colSpan={6}>Contabilista Responsável</CellH>
+        <Cell label>Nome:</Cell>
+        <Cell>{c.convenio.contabilista_nome ?? "—"} <span className="text-slate-500 ml-2">{c.convenio.contabilista_crc}</span></Cell>
+        <Cell label>CPF nº</Cell>
+        <Cell>{c.convenio.contabilista_cpf ?? "—"}</Cell>
+        <Cell label>Data</Cell>
+        <Cell>{formatDate(c.prestacao.criado_em)} <span className="text-slate-400 ml-2">Assinatura</span></Cell>
+      </div>
 
       {/* ============================================================ */}
-      {/* 7. GLOSAS */}
-      {/* ============================================================ */}
-      {c.glosados.length > 0 && (
-        <Secao titulo={`7. Despesas glosadas · ${formatBRL(c.resumo.glosa_total)}`} icon={<AlertTriangle size={14} />}>
-          <div className="space-y-2">
-            {c.glosados.map((l) => (
-              <div key={l.id} className="bg-red-50 border border-red-200 rounded p-2 text-xs">
-                <div className="font-medium text-red-900">{formatDate(l.data_lancamento)} · {l.descricao}</div>
-                <div className="text-red-700 mt-0.5">{l.fornecedor_nome ?? "—"} · {formatBRL(l.valor)}</div>
-              </div>
-            ))}
-          </div>
-        </Secao>
-      )}
-
-      {/* ============================================================ */}
-      {/* 8. ANEXOS (não imprime) */}
+      {/* ANEXOS (não imprime) */}
       {/* ============================================================ */}
       <div className="print:hidden">
         <AnexosBloco
@@ -314,109 +387,134 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
           entidadeId={c.prestacao.id}
           anexos={anexos}
           revalidatePath={`/prestacoes/${c.prestacao.id}`}
-          titulo="Anexos da prestação (extratos, relatórios, comprovantes)"
+          titulo="Anexos (extratos, relatórios, comprovantes)"
         />
       </div>
-
-      {/* Resumo de anexos no print */}
-      <div className="hidden print:block">
-        <Secao titulo={`8. Anexos da prestação · ${anexos.length}`} icon={<FileText size={14} />}>
-          {anexos.length === 0 ? (
-            <p className="text-xs text-slate-500">Sem anexos.</p>
-          ) : (
-            <ol className="list-decimal list-inside text-xs space-y-1">
-              {anexos.map((a) => (
-                <li key={a.id}>{a.nome}</li>
-              ))}
-            </ol>
-          )}
-        </Secao>
-      </div>
-
-      {/* Observações */}
-      {c.prestacao.observacoes && (
-        <Secao titulo="Observações">
-          <p className="text-xs text-slate-700 whitespace-pre-line">{c.prestacao.observacoes}</p>
-        </Secao>
-      )}
-
-      {/* Parecer técnico (se aprovada/rejeitada) */}
-      {c.prestacao.parecer_tecnico && (
-        <Secao titulo="Parecer técnico do órgão concedente">
-          <p className="text-xs text-slate-700 whitespace-pre-line">{c.prestacao.parecer_tecnico}</p>
-          {c.prestacao.analisada_em && (
-            <p className="text-[11px] text-slate-500 mt-2">Analisada em {formatDate(c.prestacao.analisada_em)}</p>
-          )}
-        </Secao>
-      )}
-
-      {/* ============================================================ */}
-      {/* DECLARAÇÃO + ASSINATURAS (só imprime) */}
-      {/* ============================================================ */}
-      <div className="hidden print:block">
-        <div className="border-t border-slate-300 pt-4 text-xs text-slate-700 leading-relaxed">
-          <p>
-            Declaro, sob as penas da lei, que as informações constantes desta prestação de contas são verdadeiras
-            e que os recursos foram aplicados conforme o Plano de Trabalho aprovado e as exigências da Lei Federal
-            13.019/2014. Os documentos comprobatórios encontram-se à disposição para fiscalização.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-12 mt-12">
-          <div className="text-center">
-            <div className="border-t border-slate-800 pt-1">
-              <strong>{ESCRITORIO.contador}</strong>
-              <div className="text-xs">{ESCRITORIO.crc} — Contador responsável</div>
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="border-t border-slate-800 pt-1">
-              <strong>{c.osc.responsavel ?? "Representante Legal"}</strong>
-              <div className="text-xs">{c.osc.nome}</div>
-            </div>
-          </div>
-        </div>
-        <div className="text-center mt-6 text-[9pt] text-slate-600">
-          {ESCRITORIO.nome} · CNPJ {ESCRITORIO.cnpj} · {ESCRITORIO.endereco}
-        </div>
-      </div>
     </div>
   );
 }
 
-function Secao({ titulo, icon, children }: { titulo: string; icon?: React.ReactNode; children: React.ReactNode }) {
+// ============================================================================
+// Componentes auxiliares
+// ============================================================================
+function SecaoTitulo({ numero, children }: { numero?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm print:rounded print:shadow-none print:break-inside-avoid">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 mb-3 flex items-center gap-2">
-        {icon}
-        {titulo}
-      </h2>
+    <h2 className="text-[10pt] font-bold uppercase tracking-wide text-slate-900 mt-4 mb-1 print:mt-3">
+      {numero && <span className="mr-1">{numero} —</span>}{children}
+    </h2>
+  );
+}
+
+function SecaoSubtitulo({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[10pt] font-semibold text-slate-800 mt-3 mb-1 bg-slate-100 px-2 py-1 print:bg-slate-200">
+      {children}
+    </h3>
+  );
+}
+
+interface CellProps {
+  children?: React.ReactNode;
+  label?: boolean;
+  className?: string;
+  colSpan?: number;
+  rowSpan?: number;
+}
+
+function Cell({ children, label, className, colSpan, rowSpan }: CellProps) {
+  const span = colSpan ? `col-span-${colSpan}` : "";
+  const row = rowSpan ? `row-span-${rowSpan}` : "";
+  return (
+    <div
+      className={cn(
+        "border-r border-b border-slate-400 print:border-black p-1.5 text-[9pt]",
+        label && "font-semibold bg-slate-50",
+        span, row,
+        className
+      )}
+      style={colSpan ? { gridColumn: `span ${colSpan} / span ${colSpan}` } : undefined}
+    >
       {children}
     </div>
   );
 }
 
-function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function CellH({ children, className, colSpan, rowSpan }: CellProps) {
   return (
-    <div>
-      <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">{titulo}</div>
+    <div
+      className={cn(
+        "border-r border-b border-slate-400 print:border-black p-1.5 text-[9pt] font-semibold bg-slate-100 print:bg-slate-200 uppercase tracking-tight",
+        className
+      )}
+      style={{
+        ...(colSpan ? { gridColumn: `span ${colSpan} / span ${colSpan}` } : {}),
+        ...(rowSpan ? { gridRow: `span ${rowSpan} / span ${rowSpan}` } : {}),
+      }}
+    >
       {children}
     </div>
   );
 }
 
-function Card({ titulo, valor, cor, sub, destaque, icon }: {
-  titulo: string; valor: string; cor?: string; sub?: string; destaque?: boolean; icon?: React.ReactNode;
-}) {
+function SubRubrica({ l }: { l: { codigo: string; nome: string; valor: number; valor_ne: number } }) {
   return (
-    <div className={cn(
-      "bg-white border border-slate-200 rounded-2xl p-4 shadow-sm print:shadow-none print:rounded print:p-2",
-      destaque && "border-[#1e3a8a]/30 ring-1 ring-[#1e3a8a]/20"
-    )}>
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-slate-500">
-        {icon} {titulo}
+    <>
+      <Cell className="pl-6">({l.codigo}) {l.nome}</Cell>
+      <Cell className="text-right">{formatBRL(l.valor)}</Cell>
+      <Cell className="text-right">{formatBRL(l.valor_ne)}</Cell>
+    </>
+  );
+}
+function EmptyRub() {
+  return (
+    <>
+      <Cell></Cell>
+      <Cell></Cell>
+      <Cell></Cell>
+    </>
+  );
+}
+
+function LinhaPenden({ label, valor }: { label: string; valor: number }) {
+  return (
+    <>
+      <Cell colSpan={4}>{label}</Cell>
+      <Cell className="text-right">{formatBRL(valor)}</Cell>
+    </>
+  );
+}
+
+function TabelaPagamentos({ titulo, linhas, colItem }: { titulo: string; linhas: { data: string; credor: string; cpf_cnpj: string | null; item_orcamento: string; nf_rec: string | null; ob: string | null; valor: number }[]; colItem: string }) {
+  const total = linhas.reduce((s, l) => s + l.valor, 0);
+  return (
+    <div className="mt-2">
+      <div className="bg-slate-50 px-2 py-1 text-[9pt] font-semibold border border-b-0 border-slate-400 print:border-black">{titulo}</div>
+      <div className="border border-slate-400 print:border-black grid grid-cols-[80px_1fr_120px_1fr_100px_100px_100px] text-[9pt]">
+        <CellH>Data</CellH>
+        <CellH>Credor</CellH>
+        <CellH>CPF / CNPJ nº</CellH>
+        <CellH>{colItem}</CellH>
+        <CellH>NF/Rec. nº</CellH>
+        <CellH>O.B. nº</CellH>
+        <CellH className="text-right">Valor (R$)</CellH>
+        {linhas.length === 0 ? (
+          <Cell colSpan={7} className="text-center text-slate-500 italic">Sem lançamentos no período.</Cell>
+        ) : (
+          linhas.map((l, i) => (
+            <>
+              <Cell key={`d${i}`}>{formatDate(l.data)}</Cell>
+              <Cell key={`c${i}`}>{l.credor}</Cell>
+              <Cell key={`cpf${i}`}>{l.cpf_cnpj ? (l.cpf_cnpj.replace(/\D/g, "").length === 14 ? formatCNPJ(l.cpf_cnpj) : formatCPF(l.cpf_cnpj)) : "—"}</Cell>
+              <Cell key={`it${i}`}>{l.item_orcamento}</Cell>
+              <Cell key={`nf${i}`}>{l.nf_rec ?? "—"}</Cell>
+              <Cell key={`ob${i}`}>{l.ob ?? "—"}</Cell>
+              <Cell key={`v${i}`} className="text-right font-semibold">{formatBRL(l.valor)}</Cell>
+            </>
+          ))
+        )}
+        <Cell label colSpan={6} className="bg-slate-100">Total {titulo.split("—")[0]?.trim()}</Cell>
+        <Cell className="text-right font-bold bg-slate-100">{formatBRL(total)}</Cell>
       </div>
-      <div className={cn("text-lg font-bold mt-1 tabular-nums", cor ?? "text-slate-900")}>{valor}</div>
-      {sub && <div className="text-[10px] text-slate-500 mt-0.5">{sub}</div>}
     </div>
   );
 }

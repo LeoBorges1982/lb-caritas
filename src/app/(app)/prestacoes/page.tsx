@@ -22,7 +22,7 @@ export default async function PrestacoesPage() {
             Prestações de contas
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Relatórios trimestrais (parciais) e final · Lei 13.019/2014, art. 63
+            Relatórios mensais (parciais) e final · Modelo SEMAS Nova Iguaçu / Lei 13.019/2014, art. 63
           </p>
         </div>
         <Link
@@ -63,7 +63,10 @@ export default async function PrestacoesPage() {
                       {p.convenio_numero}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{TIPO_PRESTACAO_LABEL[p.tipo]}</td>
+                  <td className="px-4 py-3 text-sm text-slate-700">
+                    {TIPO_PRESTACAO_LABEL[p.tipo]}
+                    {p.numero_parcela && <span className="text-slate-500 ml-1">· {p.numero_parcela}ª parcela</span>}
+                  </td>
                   <td className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
                     {formatDate(p.periodo_inicio)} – {formatDate(p.periodo_fim)}
                   </td>

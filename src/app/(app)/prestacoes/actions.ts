@@ -15,6 +15,8 @@ export async function criarPrestacao(formData: FormData) {
   const periodo_inicio = String(formData.get("periodo_inicio") ?? "");
   const periodo_fim = String(formData.get("periodo_fim") ?? "");
   const observacoes = String(formData.get("observacoes") ?? "");
+  const parcelaStr = String(formData.get("numero_parcela") ?? "");
+  const numero_parcela = parcelaStr ? Number(parcelaStr) : null;
 
   if (!convenio_id) throw new Error("Convênio é obrigatório.");
   if (!periodo_inicio || !periodo_fim) throw new Error("Período é obrigatório.");
@@ -26,6 +28,7 @@ export async function criarPrestacao(formData: FormData) {
     .insert({
       convenio_id,
       tipo,
+      numero_parcela,
       periodo_inicio,
       periodo_fim,
       status: "rascunho",

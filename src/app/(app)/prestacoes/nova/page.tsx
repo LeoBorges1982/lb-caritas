@@ -8,14 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function NovaPrestacaoPage() {
   const convenios = await listarConveniosParaBalancete();
 
-  // Sugere período: trimestre atual
+  // Sugere período = mês atual
   const hoje = new Date();
   const ano = hoje.getFullYear();
   const mes = hoje.getMonth();
-  const trimMes = Math.floor(mes / 3) * 3;
-  const inicio = new Date(ano, trimMes, 1).toISOString().slice(0, 10);
-  const fimDate = new Date(ano, trimMes + 3, 0);
-  const fim = fimDate.toISOString().slice(0, 10);
+  const inicio = new Date(ano, mes, 1).toISOString().slice(0, 10);
+  const fim = new Date(ano, mes + 1, 0).toISOString().slice(0, 10);
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -25,7 +23,7 @@ export default async function NovaPrestacaoPage() {
         </Link>
         <h1 className="text-2xl font-bold text-slate-900 mt-2">Nova prestação de contas</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Define o convênio, o tipo e o período. O sistema vai gerar o relatório consolidado automaticamente.
+          Prestações mensais (parciais) e prestação final do convênio. O sistema gera o relatório consolidado conforme modelo SEMAS.
         </p>
       </div>
 
@@ -48,13 +46,21 @@ export default async function NovaPrestacaoPage() {
                 Tipo <span className="text-red-500">*</span>
               </span>
               <select name="tipo" required className={inputCn} defaultValue="parcial">
-                <option value="parcial">Parcial (trimestral)</option>
+                <option value="parcial">Parcial (mensal)</option>
                 <option value="final">Final</option>
               </select>
             </label>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="block">
+              <span className="text-xs font-medium text-slate-700 block mb-1">
+                Nº da parcela
+              </span>
+              <input name="numero_parcela" type="number" min="1" max="60" placeholder="Ex: 12" className={inputCn} />
+              <span className="text-[11px] text-slate-500 mt-1 block">Ordem do mês de execução (1ª, 2ª, ...)</span>
+            </label>
+
             <label className="block">
               <span className="text-xs font-medium text-slate-700 block mb-1">
                 Início do período <span className="text-red-500">*</span>
@@ -71,11 +77,11 @@ export default async function NovaPrestacaoPage() {
           </div>
 
           <label className="block">
-            <span className="text-xs font-medium text-slate-700 block mb-1">Observações</span>
+            <span className="text-xs font-medium text-slate-700 block mb-1">Observações / Notas explicativas</span>
             <textarea
               name="observacoes"
               rows={3}
-              placeholder="Notas sobre a prestação, contexto, mudanças no período…"
+              placeholder="Notas relevantes que vão aparecer na Seção 5 da prestação..."
               className={inputCn}
             />
           </label>

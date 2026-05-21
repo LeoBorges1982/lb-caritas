@@ -118,12 +118,12 @@ async function processarCron(req: NextRequest) {
     }
 
     // -----------------------------------------------------------------
-    // Regra 4: Prestação trimestral atrasada
-    // (sem prestação criada com período fim > 30 dias atrás)
+    // Regra 4: Prestação mensal atrasada
+    // (sem prestação criada com período fim > 15 dias atrás)
     // -----------------------------------------------------------------
-    const trintaDiasAtras = new Date();
-    trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
-    const trintaISO = trintaDiasAtras.toISOString().slice(0, 10);
+    const quinzeDiasAtras = new Date();
+    quinzeDiasAtras.setDate(quinzeDiasAtras.getDate() - 15);
+    const quinzeISO = quinzeDiasAtras.toISOString().slice(0, 10);
 
     const { data: prests } = await supabase
       .from("caritas_prestacoes_contas")
@@ -133,14 +133,14 @@ async function processarCron(req: NextRequest) {
       .limit(1);
 
     const ultimaPrest = prests?.[0];
-    const trimestreFimEsperado = ultimoTrimestreFim();
-    const precisaPrestacao = !ultimaPrest || ultimaPrest.periodo_fim < trimestreFimEsperado;
-    if (precisaPrestacao && trimestreFimEsperado < trintaISO) {
-      const r = await criarSeNovo(supabase, c.id, "prestacao_atrasada", `prest-${c.id}-${trimestreFimEsperado}`, {
+    const mesPassadoFim = ultimoMesFim();
+    const precisaPrestacao = !ultimaPrest || ultimaPrest.periodo_fim < mesPassadoFim;
+    if (precisaPrestacao && mesPassadoFim < quinzeISO) {
+      const r = await criarSeNovo(supabase, c.id, "prestacao_atrasada", `prest-${c.id}-${mesPassadoFim}`, {
         severidade: "critico",
-        titulo: `Prestação trimestral atrasada no convênio ${c.numero}`,
-        mensagem: `O trimestre encerrado em ${new Date(trimestreFimEsperado).toLocaleDateString("pt-BR")} ainda não tem prestação de contas criada. Lei 13.019/2014 art. 63 §1º exige prestações parciais.`,
-        vencimento: trimestreFimEsperado,
+        titulo: `Prestação mensal atrasada no convênio ${c.numero}`,
+        mensagem: `O mês encerrado em ${new Date(mesPassadoFim).toLocaleDateString("pt-BR")} ainda não tem prestação de contas criada. SEMAS Nova Iguaçu exige prestações mensais.`,
+        vencimento: mesPassadoFim,
       });
       r ? criados.push(`prestacao ${c.numero}`) : ignorados.push(`prestacao ${c.numero}`);
     }
@@ -196,21 +196,11 @@ async function criarSeNovo(
   return !error;
 }
 
-/** Retorna o último dia do trimestre encerrado mais recente. */
-function ultimoTrimestreFim(): string {
+/** Retorna o último dia do mês encerrado mais recente. */
+function ultimoMesFim(): string {
   const hoje = new Date();
   const ano = hoje.getFullYear();
-  const mes = hoje.getMonth(); // 0-11
-  // Mês atual cai em qual trimestre? Q1: 0-2, Q2: 3-5, Q3: 6-8, Q4: 9-11
-  const trimAtual = Math.floor(mes / 3);
-  // O último trimestre encerrado é o anterior
-  let anoTri = ano;
-  let trimEncerrado = trimAtual - 1;
-  if (trimEncerrado < 0) {
-    trimEncerrado = 3;
-    anoTri -= 1;
-  }
-  const mesUltimo = (trimEncerrado + 1) * 3; // mês 1-based último do trimestre
-  const dataFim = new Date(anoTri, mesUltimo, 0); // último dia do mês
+  const mes = hoje.getMonth(); // 0-11 — o mês passado é (mes), porque setDate(0) volta 1 dia
+  const dataFim = new Date(ano, mes, 0);
   return dataFim.toISOString().slice(0, 10);
 }
