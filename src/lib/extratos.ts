@@ -192,6 +192,24 @@ export interface MatchResult {
   tipoCriar: "repasse" | "rendimento" | "despesa";
 }
 
+/**
+ * Classifica heurística para entradas no extrato:
+ * - Se valor bate com a parcela do convênio (±1 centavo) OU memo contém TED/SEMAS/FMAS/REPASSE → repasse
+ * - Se memo contém RENDIMENTO/JUROS/APLICAC → rendimento
+ * - Senão, valores grandes (≥ parcela/2) viram repasse; pequenos viram rendimento
+ */
+export function classificarEntrada(
+  t: TransacaoExtrato,
+  parcelaConvenio?: number
+): "repasse" | "rendimento" {
+  const memo = (t.memo || "").toUpperCase();
+  if (/RENDIMENTO|JUROS|APLICAC|RESGATE/i.test(memo)) return "rendimento";
+  if (parcelaConvenio && Math.abs(t.valor - parcelaConvenio) < 0.5) return "repasse";
+  if (/TED|TRANSFER|SEMAS|FMAS|REPASSE|CONCEDENTE|MUNICIP/i.test(memo)) return "repasse";
+  if (parcelaConvenio && t.valor >= parcelaConvenio * 0.5) return "repasse";
+  return "rendimento";
+}
+
 export function calcularMatches(
   transacoes: TransacaoExtrato[],
   previstos: LancamentoPrevisto[],

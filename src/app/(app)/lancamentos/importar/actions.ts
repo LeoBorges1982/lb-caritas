@@ -6,6 +6,7 @@ import { getSessao } from "@/lib/sessao";
 import {
   parseExtrato,
   calcularMatches,
+  classificarEntrada,
   type TransacaoExtrato,
   type LancamentoPrevisto,
   type MatchResult,
@@ -133,12 +134,30 @@ export async function importarDecisoes(
     conciliados++;
   }
 
+  // Busca parcela do convênio (valor_repasse / 12 — 12 meses padrão da Cáritas)
+  const { data: convInfo } = await supabase
+    .from("caritas_convenios")
+    .select("valor_repasse, vigencia_inicio, vigencia_fim")
+    .eq("id", convenioId)
+    .maybeSingle();
+
+  // Estima parcela como valor_repasse dividido pela duração em meses
+  let parcelaConvenio: number | undefined;
+  if (convInfo) {
+    const ini = new Date(convInfo.vigencia_inicio);
+    const fim = new Date(convInfo.vigencia_fim);
+    const meses = Math.max(1, Math.round(((fim.getFullYear() - ini.getFullYear()) * 12) + (fim.getMonth() - ini.getMonth())));
+    parcelaConvenio = Number(convInfo.valor_repasse) / meses;
+  }
+
   // Criações (INSERT)
   const aCriar = decisoes.filter((d) => d.acao === "criar");
   if (aCriar.length > 0) {
     const rows = aCriar.map((d) => ({
       convenio_id: convenioId,
-      tipo: d.transacao.tipo === "C" ? "rendimento" : "despesa",
+      tipo: d.transacao.tipo === "C"
+        ? classificarEntrada(d.transacao, parcelaConvenio)
+        : "despesa",
       data_lancamento: d.transacao.data,
       data_pagamento: d.transacao.data,
       descricao: d.transacao.memo || "Lançamento importado do extrato",

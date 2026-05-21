@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, Building2, Landmark, Calendar, Wallet,
-  Target, ListChecks, ShieldAlert, Receipt, Banknote
+  Target, ListChecks, ShieldAlert, Receipt, Banknote, Users
 } from "lucide-react";
 import { buscarConvenio, STATUS_LABEL, STATUS_CORES, TIPO_LABEL } from "@/lib/convenios";
 import { listarAnexos } from "@/lib/anexos";
@@ -30,12 +30,18 @@ export default async function ConvenioDetalhePage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex items-center justify-between">
         <Link
           href="/convenios"
           className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#1e3a8a] transition"
         >
           <ArrowLeft size={14} /> Voltar para Convênios
+        </Link>
+        <Link
+          href={`/convenios/${c.id}/acessos`}
+          className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-[#1e3a8a] bg-white border border-slate-300 px-3 py-1.5 rounded-lg"
+        >
+          <Users size={14} /> Gerenciar acessos
         </Link>
       </div>
 
