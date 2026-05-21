@@ -150,10 +150,10 @@ export default async function ConvenioDetalhePage({ params }: PageProps) {
 
       {/* Seções (placeholders linkados) */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <SecaoLink icon={<Target size={16} />} titulo="Plano de Trabalho" qtd={c.counts.metas} legenda={`${c.counts.metas} metas`} href="#" disabled />
-        <SecaoLink icon={<ListChecks size={16} />} titulo="Rubricas" qtd={c.counts.categorias} legenda="Plano de custos" href="#" disabled />
-        <SecaoLink icon={<Receipt size={16} />} titulo="Lançamentos" qtd={c.counts.lancamentos} legenda="Movimentação financeira" href="/lancamentos" />
-        <SecaoLink icon={<ShieldAlert size={16} />} titulo="Vedações" qtd={c.counts.vedacoes} legenda="Itens proibidos" href="#" disabled />
+        <SecaoLink icon={<Target size={16} />} titulo="Plano de Trabalho" qtd={c.counts.metas} legenda={`${c.counts.metas} metas`} href={`/convenios/${c.id}/metas`} />
+        <SecaoLink icon={<ListChecks size={16} />} titulo="Rubricas" qtd={c.counts.categorias} legenda="Plano de custos" href={`/convenios/${c.id}/rubricas`} />
+        <SecaoLink icon={<Receipt size={16} />} titulo="Lançamentos" qtd={c.counts.lancamentos} legenda="Movimentação financeira" href={`/lancamentos?convenio_id=${c.id}`} />
+        <SecaoLink icon={<ShieldAlert size={16} />} titulo="Vedações" qtd={c.counts.vedacoes} legenda="Itens proibidos" href={`/convenios/${c.id}/vedacoes`} />
       </div>
 
       {c.observacoes && (
