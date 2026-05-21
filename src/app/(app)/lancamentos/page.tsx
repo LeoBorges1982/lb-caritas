@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Receipt, ArrowRight } from "lucide-react";
+import { Plus, Receipt, ArrowRight, Upload } from "lucide-react";
 import {
   listarLancamentos,
   listarOpcoesFormulario,
@@ -52,12 +52,20 @@ export default async function LancamentosPage({ searchParams }: PageProps) {
             Movimentação financeira do convênio · {lancamentos.length} {lancamentos.length === 1 ? "registro" : "registros"}
           </p>
         </div>
-        <Link
-          href="/lancamentos/novo"
-          className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5 shrink-0"
-        >
-          <Plus size={14} /> Novo lançamento
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/lancamentos/importar"
+            className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5"
+          >
+            <Upload size={14} /> Importar extrato
+          </Link>
+          <Link
+            href="/lancamentos/novo"
+            className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5"
+          >
+            <Plus size={14} /> Novo lançamento
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
