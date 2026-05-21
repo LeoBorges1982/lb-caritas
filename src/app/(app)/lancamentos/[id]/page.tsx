@@ -8,7 +8,9 @@ import {
   FORMA_PAGAMENTO_LABEL, DOCUMENTO_TIPO_LABEL,
 } from "@/lib/lancamentos";
 import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
+import { listarAnexos } from "@/lib/anexos";
 import AcoesLancamento from "@/components/AcoesLancamento";
+import AnexosLancamento from "@/components/AnexosLancamento";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,8 @@ export default async function LancamentoDetalhePage({ params }: PageProps) {
   const { id } = await params;
   const l = await buscarLancamento(id);
   if (!l) notFound();
+
+  const anexos = await listarAnexos("lancamento", id);
 
   const docFmt = l.fornecedor_documento ? (
     l.fornecedor_documento.replace(/\D/g, "").length === 14
@@ -160,6 +164,9 @@ export default async function LancamentoDetalhePage({ params }: PageProps) {
           Conciliado em {formatDate(l.conciliado_em)} com o extrato bancário.
         </div>
       )}
+
+      {/* Anexos */}
+      <AnexosLancamento convenioId={l.convenio_id} lancamentoId={id} anexos={anexos} />
 
       {/* Observações */}
       {l.observacoes && (

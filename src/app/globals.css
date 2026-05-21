@@ -15,3 +15,13 @@ html, body {
 }
 
 * { box-sizing: border-box; }
+
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  body { background: white !important; color: black !important; font-size: 10pt; }
+  aside, header, nav, .print\\:hidden { display: none !important; }
+  main { padding: 0 !important; }
+  .balancete { max-width: 100% !important; }
+  .balancete table { font-size: 9pt; }
+  .balancete .border, .balancete .shadow-sm { box-shadow: none !important; }
+}
