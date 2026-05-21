@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft, Building2, Landmark, Calendar, Wallet, Users,
-  Target, ListChecks, ShieldAlert, Receipt, AlertTriangle, Banknote
+  ArrowLeft, Building2, Landmark, Calendar, Wallet,
+  Target, ListChecks, ShieldAlert, Receipt, Banknote
 } from "lucide-react";
 import { buscarConvenio, STATUS_LABEL, STATUS_CORES, TIPO_LABEL } from "@/lib/convenios";
 import { formatBRL, formatDate, formatCNPJ, diasAteVigencia, cn } from "@/lib/utils";

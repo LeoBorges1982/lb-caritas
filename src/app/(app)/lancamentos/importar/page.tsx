@@ -25,7 +25,7 @@ export default async function ImportarExtratoPage() {
         <Info size={16} className="text-blue-700 shrink-0 mt-0.5" />
         <div className="text-sm text-blue-900 leading-relaxed">
           <strong className="font-semibold">Auto-conciliação:</strong> transações que casam com lançamentos
-          do tipo "Previsto" (mesmo valor + data dentro de ±3 dias) serão marcadas como{" "}
+          do tipo <em>Previsto</em> (mesmo valor + data dentro de ±3 dias) serão marcadas como{" "}
           <strong>conciliadas</strong>. Transações sem match viram <strong>novos lançamentos</strong>
           {" "}com status <em>Realizado</em>.
         </div>
