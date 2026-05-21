@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileSignature, Receipt, BookOpenCheck,
-  Bell, Wallet, BarChart3, ExternalLink,
+  Bell, Wallet, BarChart3, ExternalLink, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ const ITENS = [
   { href: "/convenios", label: "Convênios", icone: FileSignature },
   { href: "/lancamentos", label: "Lançamentos", icone: Receipt },
   { href: "/balancetes", label: "Balancetes", icone: BookOpenCheck },
+  { href: "/prestacoes", label: "Prestações", icone: FileText },
   { href: "/alertas", label: "Alertas", icone: Bell },
   { href: "/reembolsos", label: "Reembolsos", icone: Wallet },
   { href: "/relatorios", label: "Relatórios", icone: BarChart3 },
