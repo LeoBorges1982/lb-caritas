@@ -13,6 +13,7 @@ import BotaoImprimir from "@/components/BotaoImprimir";
 import AcoesPrestacao from "@/components/AcoesPrestacao";
 import AnexosBloco from "@/components/AnexosBloco";
 import BotaoExcluirPrestacao from "@/components/BotaoExcluirPrestacao";
+import EditarPeriodoPrestacao from "@/components/EditarPeriodoPrestacao";
 
 export const dynamic = "force-dynamic";
 
@@ -92,7 +93,14 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
         </div>
         <div className="grid grid-cols-[140px_1fr] border-b border-slate-400 print:border-black">
           <div className="p-2 border-r border-slate-400 print:border-black text-[9pt]">Período</div>
-          <div className="p-2 font-semibold">{formatDate(c.prestacao.periodo_inicio)} à {formatDate(c.prestacao.periodo_fim)}</div>
+          <div className="p-2 font-semibold">
+            {formatDate(c.prestacao.periodo_inicio)} à {formatDate(c.prestacao.periodo_fim)}
+            <EditarPeriodoPrestacao
+              id={c.prestacao.id}
+              periodoInicio={c.prestacao.periodo_inicio}
+              periodoFim={c.prestacao.periodo_fim}
+            />
+          </div>
         </div>
       </div>
 

@@ -88,6 +88,26 @@ export async function atualizarObservacoes(id: string, observacoes: string) {
   revalidatePath(`/prestacoes/${id}`);
 }
 
+export async function atualizarPeriodoPrestacao(id: string, formData: FormData) {
+  const sessao = await getSessao();
+  if (!sessao) throw new Error("Sessão expirada.");
+
+  const periodo_inicio = String(formData.get("periodo_inicio") ?? "");
+  const periodo_fim    = String(formData.get("periodo_fim") ?? "");
+  if (!periodo_inicio || !periodo_fim) throw new Error("Período é obrigatório.");
+  if (periodo_fim < periodo_inicio) throw new Error("Data fim não pode ser anterior ao início.");
+
+  const supabase = adminClient();
+  const { error } = await supabase
+    .from("caritas_prestacoes_contas")
+    .update({ periodo_inicio, periodo_fim })
+    .eq("id", id);
+  if (error) throw new Error(`Erro ao salvar período: ${error.message}`);
+
+  revalidatePath(`/prestacoes/${id}`);
+  revalidatePath("/prestacoes");
+}
+
 export async function deletarPrestacao(id: string) {
   const sessao = await getSessao();
   if (!sessao) throw new Error("Sessão expirada.");
