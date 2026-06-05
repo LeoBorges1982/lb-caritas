@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FileText, Plus, ArrowRight } from "lucide-react";
+import BotaoExcluirPrestacao from "@/components/BotaoExcluirPrestacao";
 import {
   listarPrestacoes,
   STATUS_PRESTACAO_LABEL,
@@ -52,7 +53,7 @@ export default async function PrestacoesPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Protocolo</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Glosa</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Status</th>
-                <th className="w-10"></th>
+                <th className="w-20"></th>
               </tr>
             </thead>
             <tbody>
@@ -89,12 +90,15 @@ export default async function PrestacoesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/prestacoes/${p.id}`}
-                      className="inline-flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-[#1e3a8a]"
-                    >
-                      <ArrowRight size={14} />
-                    </Link>
+                    <div className="flex items-center gap-1 justify-end">
+                      <Link
+                        href={`/prestacoes/${p.id}`}
+                        className="inline-flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-[#1e3a8a]"
+                      >
+                        <ArrowRight size={14} />
+                      </Link>
+                      <BotaoExcluirPrestacao id={p.id} label={`${p.convenio_numero} · ${TIPO_PRESTACAO_LABEL[p.tipo]}`} />
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -285,7 +285,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
       .from("caritas_lancamentos")
       .select(`
         id, data_lancamento, data_pagamento, tipo, status, descricao,
-        fornecedor_nome, fornecedor_documento, documento_numero, valor,
+        fornecedor_nome, fornecedor_documento, documento_numero, valor, valor_pago_total,
         categoria_id,
         categoria:caritas_categorias_despesa ( codigo, nome, grupo, valor_previsto )
       `)
@@ -329,19 +329,27 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
     fornecedor_documento: string | null;
     documento_numero: string | null;
     valor: number | string;
+    valor_pago_total: number | string | null;
     categoria_id: string | null;
     categoria: { codigo: string; nome: string; grupo: string | null; valor_previsto: number | string } | { codigo: string; nome: string; grupo: string | null; valor_previsto: number | string }[] | null;
   };
   const lancs = (periodoRes.data ?? []) as LancRow[];
 
   let repasses = 0, rendimentos = 0;
-  const outras_rec = 0, recursos_osc = 0;
+  const outras_rec = 0;
+  let recursos_osc = 0;
   let saldo_abertura_periodo = 0;
   for (const l of lancs) {
     const v = Number(l.valor);
     if (l.tipo === "repasse") repasses += v;
     else if (l.tipo === "rendimento") rendimentos += v;
     else if (l.tipo === "saldo_abertura") saldo_abertura_periodo += v;
+    // Contrapartida OSC: quando valor_pago_total > valor (cobertura parcial pelo convênio)
+    else if (l.tipo === "despesa" && l.status !== "glosado" && l.valor_pago_total !== null) {
+      const vTotal = Number(l.valor_pago_total);
+      const diff = vTotal - v;
+      if (diff > 0) recursos_osc += diff;
+    }
   }
   // Se houver saldo_abertura no período, soma ao "saldo do período anterior"
   const receita_E = saldo_periodo_anterior + saldo_abertura_periodo;

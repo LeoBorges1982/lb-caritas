@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, Building2, Landmark, Calendar, Wallet,
-  Target, ListChecks, ShieldAlert, Receipt, Banknote, Users
+  Target, ListChecks, ShieldAlert, Receipt, Banknote, Users, FileSignature
 } from "lucide-react";
 import { buscarConvenio, STATUS_LABEL, STATUS_CORES, TIPO_LABEL } from "@/lib/convenios";
 import { listarAnexos } from "@/lib/anexos";
@@ -37,12 +37,26 @@ export default async function ConvenioDetalhePage({ params }: PageProps) {
         >
           <ArrowLeft size={14} /> Voltar para Convênios
         </Link>
-        <Link
-          href={`/convenios/${c.id}/acessos`}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-[#1e3a8a] bg-white border border-slate-300 px-3 py-1.5 rounded-lg"
-        >
-          <Users size={14} /> Gerenciar acessos
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={`/convenios/${c.id}/responsaveis`}
+            className="inline-flex items-center gap-1.5 text-sm text-[#1e3a8a] hover:text-[#1e40af] bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg font-medium"
+          >
+            <Users size={14} /> Responsáveis
+          </Link>
+          <Link
+            href={`/convenios/${c.id}/encerrar`}
+            className="inline-flex items-center gap-1.5 text-sm text-amber-700 hover:text-amber-900 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg font-medium"
+          >
+            <FileSignature size={14} /> Encerrar / Renovar
+          </Link>
+          <Link
+            href={`/convenios/${c.id}/acessos`}
+            className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-[#1e3a8a] bg-white border border-slate-300 px-3 py-1.5 rounded-lg"
+          >
+            <Users size={14} /> Gerenciar acessos
+          </Link>
+        </div>
       </div>
 
       {/* Hero */}
@@ -88,7 +102,15 @@ export default async function ConvenioDetalhePage({ params }: PageProps) {
           }
           subClass={venceu ? "text-red-600 font-medium" : proximoVencimento ? "text-amber-600 font-medium" : ""}
         />
-        <Card icon={<Banknote size={16} />} titulo="Repasse / Contrapartida" valor={`${formatBRL(c.valor_repasse)} / ${formatBRL(c.valor_contrapartida)}`} sub={c.rendimentos > 0 ? `Rendimentos: ${formatBRL(c.rendimentos)}` : "Sem rendimentos registrados"} />
+        <Card
+          icon={<Banknote size={16} />}
+          titulo="Repasse / Contrapartida"
+          valor={`${formatBRL(c.valor_repasse)} / ${formatBRL(c.valor_contrapartida)}`}
+          sub={[
+            c.saldo_anterior > 0 ? `Saldo anterior: ${formatBRL(c.saldo_anterior)}` : null,
+            c.rendimentos > 0 ? `Rendimentos: ${formatBRL(c.rendimentos)}` : null,
+          ].filter(Boolean).join(" · ") || "Sem rendimentos registrados"}
+        />
         <Card icon={<Receipt size={16} />} titulo="Lançamentos" valor={String(c.counts.lancamentos)} sub={`${c.counts.metas} metas · ${c.counts.categorias} rubricas`} />
       </div>
 

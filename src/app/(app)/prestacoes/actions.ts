@@ -93,16 +93,6 @@ export async function deletarPrestacao(id: string) {
   if (!sessao) throw new Error("Sessão expirada.");
 
   const supabase = adminClient();
-  const { data: pc } = await supabase
-    .from("caritas_prestacoes_contas")
-    .select("status")
-    .eq("id", id)
-    .single();
-
-  if (pc?.status !== "rascunho") {
-    throw new Error("Só é possível excluir prestações em rascunho.");
-  }
-
   const { error } = await supabase
     .from("caritas_prestacoes_contas")
     .delete()

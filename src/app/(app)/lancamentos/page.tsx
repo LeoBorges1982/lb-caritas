@@ -9,6 +9,8 @@ import {
 } from "@/lib/lancamentos";
 import { formatBRL, formatDate, cn } from "@/lib/utils";
 import FiltrosLancamentos from "@/components/FiltrosLancamentos";
+import BotaoReplicarMes from "@/components/BotaoReplicarMes";
+import BotaoExcluirLancamento from "@/components/BotaoExcluirLancamento";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +55,7 @@ export default async function LancamentosPage({ searchParams }: PageProps) {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <BotaoReplicarMes convenios={opcoes.convenios.map((c) => ({ id: c.id, numero: c.numero }))} />
           <Link
             href="/lancamentos/importar"
             className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5"
@@ -95,7 +98,7 @@ export default async function LancamentosPage({ searchParams }: PageProps) {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Tipo</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Valor</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Status</th>
-                <th className="w-10"></th>
+                <th className="w-20"></th>
               </tr>
             </thead>
             <tbody>
@@ -140,12 +143,15 @@ export default async function LancamentosPage({ searchParams }: PageProps) {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/lancamentos/${l.id}`}
-                      className="inline-flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-[#1e3a8a] transition"
-                    >
-                      <ArrowRight size={14} />
-                    </Link>
+                    <div className="flex items-center gap-1 justify-end">
+                      <Link
+                        href={`/lancamentos/${l.id}`}
+                        className="inline-flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-[#1e3a8a] transition"
+                      >
+                        <ArrowRight size={14} />
+                      </Link>
+                      <BotaoExcluirLancamento id={l.id} descricao={l.descricao} />
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -30,6 +30,8 @@ export interface ConvenioDetalhe {
   valor_repasse: number;
   valor_contrapartida: number;
   rendimentos: number;
+  saldo_anterior: number;
+  saldo_anterior_origem: string | null;
   data_assinatura: string | null;
   vigencia_inicio: string;
   vigencia_fim: string;
@@ -47,6 +49,10 @@ export interface ConvenioDetalhe {
     cidade: string | null;
     estado: string | null;
     responsavel: string | null;
+    email: string | null;
+    telefone: string | null;
+    endereco: string | null;
+    cep: string | null;
   };
   orgao: {
     id: string;
@@ -146,7 +152,7 @@ export async function buscarConvenio(id: string): Promise<ConvenioDetalhe | null
     .from("caritas_convenios")
     .select(`
       *,
-      osc:caritas_oscs ( id, nome, cnpj, cidade, estado, responsavel ),
+      osc:caritas_oscs ( id, nome, cnpj, cidade, estado, responsavel, email, telefone, endereco, cep ),
       orgao:caritas_orgaos_concedentes ( id, nome, sigla, esfera, fundo )
     `)
     .eq("id", id)
@@ -169,7 +175,7 @@ export async function buscarConvenio(id: string): Promise<ConvenioDetalhe | null
 
   type OscJoin = ConvenioDetalhe["osc"];
   type OrgaoJoin = ConvenioDetalhe["orgao"];
-  type ConvRow = Omit<ConvenioDetalhe, "osc" | "orgao" | "saldo" | "counts" | "valor_total" | "valor_repasse" | "valor_contrapartida" | "rendimentos"> & {
+  type ConvRow = Omit<ConvenioDetalhe, "osc" | "orgao" | "saldo" | "counts" | "valor_total" | "valor_repasse" | "valor_contrapartida" | "rendimentos" | "saldo_anterior"> & {
     valor_total: number | string;
     valor_repasse: number | string;
     valor_contrapartida: number | string;
@@ -197,6 +203,8 @@ export async function buscarConvenio(id: string): Promise<ConvenioDetalhe | null
     valor_repasse: Number(c.valor_repasse),
     valor_contrapartida: Number(c.valor_contrapartida),
     rendimentos: Number(c.rendimentos),
+    saldo_anterior: Number((c as { saldo_anterior?: number | string }).saldo_anterior ?? 0),
+    saldo_anterior_origem: (c as { saldo_anterior_origem?: string | null }).saldo_anterior_origem ?? null,
     data_assinatura: c.data_assinatura,
     vigencia_inicio: c.vigencia_inicio,
     vigencia_fim: c.vigencia_fim,

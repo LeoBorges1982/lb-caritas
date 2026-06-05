@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil, Calendar, Wallet, Building2, Receipt, AlertTriangle } from "lucide-react";
+import BotaoExcluirLancamento from "@/components/BotaoExcluirLancamento";
 import {
   buscarLancamento,
   TIPO_LABEL, TIPO_CORES, TIPO_SINAL,
@@ -37,12 +38,15 @@ export default async function LancamentoDetalhePage({ params }: PageProps) {
         <Link href="/lancamentos" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#1e3a8a]">
           <ArrowLeft size={14} /> Voltar para Lançamentos
         </Link>
-        <Link
-          href={`/lancamentos/${id}/editar`}
-          className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg flex items-center gap-1.5"
-        >
-          <Pencil size={14} /> Editar
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/lancamentos/${id}/editar`}
+            className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg flex items-center gap-1.5"
+          >
+            <Pencil size={14} /> Editar
+          </Link>
+          <BotaoExcluirLancamento id={id} descricao={l.descricao} />
+        </div>
       </div>
 
       {/* Hero */}

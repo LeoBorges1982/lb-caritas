@@ -35,12 +35,20 @@ export default async function RubricasPage({ params }: PageProps) {
               Plano de custos · {convenio.numero} · execução por categoria
             </p>
           </div>
-          <Link
-            href={`/lancamentos/novo?convenio_id=${id}`}
-            className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0"
-          >
-            <Plus size={14} /> Novo lançamento
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/convenios/${id}/plano-trabalho`}
+              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+            >
+              Editar plano
+            </Link>
+            <Link
+              href={`/lancamentos/novo?convenio_id=${id}`}
+              className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+            >
+              <Plus size={14} /> Novo lançamento
+            </Link>
+          </div>
         </div>
       </div>
 
