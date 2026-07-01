@@ -18,6 +18,8 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
           font-size: 9.5pt;
           color: #000;
           line-height: 1.25;
+          padding: 2cm 1.8cm;   /* fallback pra quando @page é ignorado */
+          box-sizing: border-box;
         }
         .prestacao-oficial table {
           width: 100%;
