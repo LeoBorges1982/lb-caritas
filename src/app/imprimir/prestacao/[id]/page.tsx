@@ -26,27 +26,37 @@ export default async function ImprimirPrestacaoPage({ params }: PageProps) {
         html, body { background: #f1f5f9; margin: 0; padding: 0; }
         .standalone-pdf {
           width: 210mm;
-          padding: 14mm 12mm;
+          padding: 22mm 20mm;              /* margens visíveis na TELA */
           margin: 0 auto;
           background: white;
           min-height: 297mm;
           box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
         @media screen { .standalone-pdf { margin-top: 70px; margin-bottom: 24px; } }
+
         @media print {
-          @page { size: A4; margin: 0; }
+          /* Margens da FOLHA A4 impressa — cada quebra respeita esses valores */
+          @page {
+            size: A4;
+            margin: 22mm 18mm 24mm 18mm;   /* topo | direita | base | esquerda */
+          }
           html, body {
             background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
           .no-print { display: none !important; }
+          /* Na impressão o wrapper NÃO tem mais padding próprio
+             — quem cria margem é o @page acima */
           .standalone-pdf {
-            width: 210mm;
-            padding: 14mm 12mm;
+            width: auto;
+            padding: 0;
             margin: 0;
             box-shadow: none;
             min-height: auto;
+            background: white !important;
           }
           * {
             -webkit-print-color-adjust: exact !important;
