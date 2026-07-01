@@ -15,21 +15,21 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
       <style>{`
         .prestacao-oficial {
           font-family: "Times New Roman", "Liberation Serif", Georgia, serif;
-          font-size: 10pt;
+          font-size: 9.5pt;
           color: #000;
-          line-height: 1.35;
+          line-height: 1.25;
         }
         .prestacao-oficial table {
           width: 100%;
           border-collapse: collapse;
           margin: 0;
-          font-size: 9.5pt;
+          font-size: 8.5pt;
         }
         .prestacao-oficial table, .prestacao-oficial th, .prestacao-oficial td {
           border: 1px solid #000;
         }
         .prestacao-oficial th, .prestacao-oficial td {
-          padding: 3px 5px;
+          padding: 2px 4px;
           vertical-align: middle;
           text-align: left;
         }
@@ -47,17 +47,17 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
         .prestacao-oficial .muted { color: #555; font-style: italic; }
         .prestacao-oficial .total-row { font-weight: 700; border-top: 2px solid #000; }
         .prestacao-oficial h1.doc-title {
-          font-size: 13pt; font-weight: 700; text-transform: uppercase;
-          text-align: center; margin: 0 0 6px 0; letter-spacing: 0.03em;
+          font-size: 12pt; font-weight: 700; text-transform: uppercase;
+          text-align: center; margin: 0 0 4px 0; letter-spacing: 0.03em;
         }
         .prestacao-oficial h2.secao {
-          font-size: 11pt; font-weight: 700; text-transform: uppercase;
-          padding: 4px 6px; margin: 14px 0 4px 0;
+          font-size: 10pt; font-weight: 700; text-transform: uppercase;
+          padding: 3px 5px; margin: 8px 0 3px 0;
           border: 1px solid #000; background: #fff; letter-spacing: 0.02em;
         }
         .prestacao-oficial h3.subsecao {
-          font-size: 10pt; font-weight: 700;
-          padding: 3px 6px; margin: 10px 0 4px 0;
+          font-size: 9.5pt; font-weight: 700;
+          padding: 2px 5px; margin: 6px 0 3px 0;
           border: 1px solid #000; background: #fff;
         }
         .prestacao-oficial .cabecalho-doc {
@@ -81,21 +81,21 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
           line-height: 12px; font-weight: 700; font-family: monospace;
         }
         .prestacao-oficial .assinaturas-wrap {
-          margin-top: 20px;
+          margin-top: 10px;
           display: grid; grid-template-columns: 1fr 1fr;
-          gap: 24px 32px;
+          gap: 14px 24px;
         }
         .prestacao-oficial .assinatura-bloco {
           break-inside: avoid;
           page-break-inside: avoid;
         }
         .prestacao-oficial .assinatura-titulo {
-          font-size: 9pt; font-weight: 700; text-transform: uppercase;
-          text-align: center; margin-bottom: 48px; letter-spacing: 0.04em;
+          font-size: 8.5pt; font-weight: 700; text-transform: uppercase;
+          text-align: center; margin-bottom: 32px; letter-spacing: 0.04em;
         }
         .prestacao-oficial .assinatura-linha {
-          border-top: 1px solid #000; padding-top: 4px;
-          text-align: center; font-size: 9pt;
+          border-top: 1px solid #000; padding-top: 3px;
+          text-align: center; font-size: 8.5pt;
         }
         .prestacao-oficial .footer-doc {
           margin-top: 24px; padding-top: 6px;
@@ -110,10 +110,10 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
         /* IMPRESSÃO */
         @page {
           size: A4;
-          margin: 2cm 1.6cm 2.2cm 1.6cm;   /* topo | direita | base | esquerda */
+          margin: 1.4cm 1.3cm 1.6cm 1.3cm;   /* topo | direita | base | esquerda */
         }
         @page :first {
-          margin-top: 1.6cm;                /* topo menor na 1ª página */
+          margin-top: 1.2cm;                 /* topo menor na 1ª página */
         }
         @media print {
           html, body {
@@ -471,25 +471,25 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
           titulo="Responsável da OSC (Gestor)"
           nome={c.convenio.gestor_osc}
           cpf={c.convenio.gestor_osc_cpf}
-          data={formatDate(c.prestacao.criado_em)}
+          data={formatDate(c.prestacao.periodo_fim)}
         />
         <BlocoAssinatura
           titulo="Responsável pela Elaboração"
           nome={c.convenio.elaborador_nome}
           cpf={c.convenio.elaborador_cpf}
-          data={formatDate(c.prestacao.criado_em)}
+          data={formatDate(c.prestacao.periodo_fim)}
         />
         <BlocoAssinatura
           titulo="Responsável Legal da OSC"
           nome={c.convenio.responsavel_legal_nome}
           cpf={c.convenio.responsavel_legal_cpf}
-          data={formatDate(c.prestacao.criado_em)}
+          data={formatDate(c.prestacao.periodo_fim)}
         />
         <BlocoAssinatura
           titulo="Contabilista Responsável"
           nome={c.convenio.contabilista_nome}
           cpf={c.convenio.contabilista_cpf}
-          data={formatDate(c.prestacao.criado_em)}
+          data={formatDate(c.prestacao.periodo_fim)}
           crc={c.convenio.contabilista_crc}
         />
       </div>
