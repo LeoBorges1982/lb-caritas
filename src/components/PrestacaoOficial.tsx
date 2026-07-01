@@ -110,10 +110,7 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
         /* IMPRESSÃO */
         @page {
           size: A4;
-          margin: 1.8cm 1.8cm 2cm 1.8cm;    /* topo | direita | base | esquerda */
-        }
-        @page :first {
-          margin-top: 1.6cm;                 /* topo levemente menor na 1ª página */
+          margin: 2.5cm 2cm 2.5cm 2cm;      /* topo | direita | base | esquerda */
         }
         @media print {
           html, body {
