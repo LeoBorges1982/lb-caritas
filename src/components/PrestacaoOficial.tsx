@@ -2,251 +2,446 @@ import type { PrestacaoConsolidada } from "@/lib/prestacoes";
 import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
 
 /**
- * Componente puro do Relatório Oficial de Execução Financeira (modelo SEMAS).
- * Sem header de site, sem botões — só o conteúdo do relatório.
- * Usado tanto na tela interna quanto na rota standalone /imprimir.
+ * Relatório Oficial de Execução Financeira — formato SEMAS-NI (Lei 13.019/14 art. 63).
+ * Layout A4 retrato, P&B, tipografia serifada, sem cores.
+ * Usado na tela interna e na rota /imprimir standalone.
  */
 export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
   const ehFinal = c.prestacao.tipo === "final";
 
   return (
-    <div className="balancete text-[10pt] space-y-3">
-      {/* CABEÇALHO OFICIAL */}
-      <div className="border border-slate-400 print:border-black rounded print:rounded-none">
-        <div className="grid grid-cols-[1fr_180px] border-b border-slate-400 print:border-black">
-          <div className="p-3 flex items-center justify-center text-center">
-            <h1 className="text-base font-bold text-slate-900 uppercase tracking-wide">
-              Relatório de Execução Financeira
-            </h1>
-          </div>
-          <div className="border-l border-slate-400 print:border-black grid grid-cols-2 text-[9pt]">
-            <div className="p-2 border-r border-b border-slate-400 print:border-black">Final</div>
-            <div className="p-2 border-b border-slate-400 print:border-black text-center font-bold">{ehFinal ? "X" : ""}</div>
-            <div className="p-2 border-r border-b border-slate-400 print:border-black">Parcial</div>
-            <div className="p-2 border-b border-slate-400 print:border-black text-center font-bold">{ehFinal ? "" : "X"}</div>
-            <div className="p-2 border-r border-slate-400 print:border-black">Parcela</div>
-            <div className="p-2 text-center font-bold">{c.prestacao.numero_parcela ? `${c.prestacao.numero_parcela}ª` : "—"}</div>
-          </div>
+    <div className="prestacao-oficial">
+      {/* CSS global do documento (só afeta esse componente) */}
+      <style>{`
+        .prestacao-oficial {
+          font-family: "Times New Roman", "Liberation Serif", Georgia, serif;
+          font-size: 10pt;
+          color: #000;
+          line-height: 1.35;
+        }
+        .prestacao-oficial table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 0;
+          font-size: 9.5pt;
+        }
+        .prestacao-oficial table, .prestacao-oficial th, .prestacao-oficial td {
+          border: 1px solid #000;
+        }
+        .prestacao-oficial th, .prestacao-oficial td {
+          padding: 3px 5px;
+          vertical-align: middle;
+          text-align: left;
+        }
+        .prestacao-oficial th {
+          background: #fff;
+          font-weight: 700;
+          text-align: center;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+        .prestacao-oficial .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .prestacao-oficial .center { text-align: center; }
+        .prestacao-oficial .bold { font-weight: 700; }
+        .prestacao-oficial .label { font-weight: 700; }
+        .prestacao-oficial .muted { color: #555; font-style: italic; }
+        .prestacao-oficial .total-row { font-weight: 700; border-top: 2px solid #000; }
+        .prestacao-oficial h1.doc-title {
+          font-size: 13pt; font-weight: 700; text-transform: uppercase;
+          text-align: center; margin: 0 0 6px 0; letter-spacing: 0.03em;
+        }
+        .prestacao-oficial h2.secao {
+          font-size: 11pt; font-weight: 700; text-transform: uppercase;
+          padding: 4px 6px; margin: 14px 0 4px 0;
+          border: 1px solid #000; background: #fff; letter-spacing: 0.02em;
+        }
+        .prestacao-oficial h3.subsecao {
+          font-size: 10pt; font-weight: 700;
+          padding: 3px 6px; margin: 10px 0 4px 0;
+          border: 1px solid #000; background: #fff;
+        }
+        .prestacao-oficial .cabecalho-doc {
+          display: grid; grid-template-columns: 1fr auto;
+          gap: 8px; align-items: flex-start;
+          margin-bottom: 8px; padding-bottom: 6px;
+          border-bottom: 2px solid #000;
+        }
+        .prestacao-oficial .cabecalho-tipo {
+          border: 1px solid #000; padding: 2px 0;
+          font-size: 9pt; min-width: 220px;
+        }
+        .prestacao-oficial .cabecalho-tipo div {
+          display: grid; grid-template-columns: 1fr auto;
+          padding: 3px 8px; gap: 8px;
+        }
+        .prestacao-oficial .cabecalho-tipo div + div { border-top: 1px solid #000; }
+        .prestacao-oficial .chk {
+          display: inline-block; width: 14px; height: 14px;
+          border: 1px solid #000; text-align: center;
+          line-height: 12px; font-weight: 700; font-family: monospace;
+        }
+        .prestacao-oficial .assinaturas-wrap {
+          margin-top: 20px;
+          display: grid; grid-template-columns: 1fr 1fr;
+          gap: 24px 32px;
+        }
+        .prestacao-oficial .assinatura-bloco {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .prestacao-oficial .assinatura-titulo {
+          font-size: 9pt; font-weight: 700; text-transform: uppercase;
+          text-align: center; margin-bottom: 48px; letter-spacing: 0.04em;
+        }
+        .prestacao-oficial .assinatura-linha {
+          border-top: 1px solid #000; padding-top: 4px;
+          text-align: center; font-size: 9pt;
+        }
+        .prestacao-oficial .footer-doc {
+          margin-top: 24px; padding-top: 6px;
+          border-top: 1px solid #000;
+          font-size: 8.5pt; text-align: center; color: #333;
+        }
+        .prestacao-oficial .obs-bloco {
+          border: 1px solid #000; padding: 6px 8px;
+          font-size: 9pt; margin-top: 4px;
+        }
+
+        /* IMPRESSÃO */
+        @media print {
+          .prestacao-oficial { font-size: 10pt; }
+          .prestacao-oficial table { page-break-inside: auto; }
+          .prestacao-oficial tr { page-break-inside: avoid; page-break-after: auto; }
+          .prestacao-oficial thead { display: table-header-group; }
+          .prestacao-oficial h2.secao, .prestacao-oficial h3.subsecao {
+            page-break-after: avoid;
+          }
+          .prestacao-oficial .assinaturas-wrap {
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
+
+      {/* CABEÇALHO */}
+      <h1 className="doc-title">Relatório de Execução Financeira</h1>
+
+      <div className="cabecalho-doc">
+        <div style={{ fontSize: "9pt" }}>
+          <strong style={{ fontSize: "10pt" }}>Fundo Municipal de Assistência Social — FMAS</strong>
+          <br />
+          Secretaria Municipal de Assistência Social · Prefeitura de Nova Iguaçu/RJ
         </div>
-        <div className="grid grid-cols-[140px_1fr] border-b border-slate-400 print:border-black">
-          <div className="p-2 border-r border-slate-400 print:border-black text-[9pt]">Período</div>
-          <div className="p-2 font-semibold">{formatDate(c.prestacao.periodo_inicio)} à {formatDate(c.prestacao.periodo_fim)}</div>
+        <div className="cabecalho-tipo">
+          <div>
+            <span>Final</span>
+            <span className="chk">{ehFinal ? "X" : ""}</span>
+          </div>
+          <div>
+            <span>Parcial</span>
+            <span className="chk">{ehFinal ? "" : "X"}</span>
+          </div>
+          <div>
+            <span>Parcela</span>
+            <strong>{c.prestacao.numero_parcela ? `${c.prestacao.numero_parcela}ª` : "—"}</strong>
+          </div>
+          <div>
+            <span>Período</span>
+            <strong>{formatDate(c.prestacao.periodo_inicio)} a {formatDate(c.prestacao.periodo_fim)}</strong>
+          </div>
         </div>
       </div>
 
       {/* 1 — DADOS DA PARCEIRA */}
-      <SecaoTitulo numero="1">Dados da Parceira</SecaoTitulo>
-      <div className="border border-slate-400 print:border-black grid grid-cols-[80px_1fr_60px_1fr_60px_1fr] text-[9pt]">
-        <Cell label>OSC:</Cell>
-        <Cell colSpan={3}>{c.osc.nome}</Cell>
-        <Cell label>CNPJ:</Cell>
-        <Cell>{c.osc.cnpj ? formatCNPJ(c.osc.cnpj) : "—"}</Cell>
-
-        <Cell label>Endereço:</Cell>
-        <Cell colSpan={3}>{c.osc.endereco ?? "—"}</Cell>
-        <Cell label>CEP:</Cell>
-        <Cell>{c.osc.cep ?? "—"}</Cell>
-
-        <Cell label>Município</Cell>
-        <Cell>{c.osc.cidade ?? "—"}</Cell>
-        <Cell label>Telefone:</Cell>
-        <Cell>{c.osc.telefone ?? "—"}</Cell>
-        <Cell label>E-mail:</Cell>
-        <Cell>{c.osc.email ?? "—"}</Cell>
-
-        <Cell label>Resp. Técnico:</Cell>
-        <Cell>{c.convenio.responsavel_tecnico_nome ?? "—"}</Cell>
-        <Cell colSpan={2}>Função: {c.convenio.responsavel_tecnico_funcao ?? "—"}</Cell>
-        <Cell colSpan={2}>E-mail: {c.convenio.responsavel_tecnico_email ?? "—"}</Cell>
-
-        <Cell label>CPF:</Cell>
-        <Cell>{c.convenio.responsavel_tecnico_cpf ?? "—"}</Cell>
-        <Cell colSpan={4}></Cell>
-      </div>
+      <h2 className="secao">1 — Dados da Parceira</h2>
+      <table>
+        <tbody>
+          <tr>
+            <td className="label" style={{ width: "10%" }}>OSC:</td>
+            <td colSpan={3}>{c.osc.nome}</td>
+            <td className="label" style={{ width: "8%" }}>CNPJ:</td>
+            <td style={{ width: "16%" }}>{c.osc.cnpj ? formatCNPJ(c.osc.cnpj) : "—"}</td>
+          </tr>
+          <tr>
+            <td className="label">Endereço:</td>
+            <td colSpan={3}>{c.osc.endereco ?? "—"}</td>
+            <td className="label">CEP:</td>
+            <td>{c.osc.cep ?? "—"}</td>
+          </tr>
+          <tr>
+            <td className="label">Município:</td>
+            <td>{c.osc.cidade ?? "—"}</td>
+            <td className="label">Telefone:</td>
+            <td>{c.osc.telefone ?? "—"}</td>
+            <td className="label">E-mail:</td>
+            <td>{c.osc.email ?? "—"}</td>
+          </tr>
+          <tr>
+            <td className="label">Resp. Técnico:</td>
+            <td>{c.convenio.responsavel_tecnico_nome ?? "—"}</td>
+            <td className="label">Função:</td>
+            <td>{c.convenio.responsavel_tecnico_funcao ?? "—"}</td>
+            <td className="label">E-mail:</td>
+            <td>{c.convenio.responsavel_tecnico_email ?? "—"}</td>
+          </tr>
+          <tr>
+            <td className="label">CPF:</td>
+            <td colSpan={5}>{c.convenio.responsavel_tecnico_cpf ?? "—"}</td>
+          </tr>
+        </tbody>
+      </table>
 
       {/* 2 — DADOS DO INSTRUMENTO JURÍDICO */}
-      <SecaoTitulo numero="2">Dados do Instrumento Jurídico</SecaoTitulo>
-      <div className="border border-slate-400 print:border-black grid grid-cols-[100px_140px_140px_1fr_120px_160px] text-[9pt]">
-        <CellH>Processo</CellH>
-        <CellH>Termo de Colaboração</CellH>
-        <CellH>Termo Aditivo nº</CellH>
-        <CellH>Título da Parceria (Objeto)</CellH>
-        <CellH>Valor Global (R$)</CellH>
-        <CellH>Vigência</CellH>
+      <h2 className="secao">2 — Dados do Instrumento Jurídico</h2>
+      <table>
+        <thead>
+          <tr>
+            <th style={{ width: "11%" }}>Processo</th>
+            <th style={{ width: "14%" }}>Termo de Colaboração</th>
+            <th style={{ width: "10%" }}>Termo Aditivo</th>
+            <th>Objeto</th>
+            <th style={{ width: "13%" }}>Valor Global (R$)</th>
+            <th style={{ width: "17%" }}>Vigência</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className="center">2024/103819</td>
+            <td className="center">{c.convenio.numero}</td>
+            <td className="center">1</td>
+            <td>{c.convenio.objeto}</td>
+            <td className="num">{formatBRL(c.convenio.valor_total).replace("R$", "").trim()}</td>
+            <td className="center">
+              {formatDate(c.convenio.vigencia_inicio)} a {formatDate(c.convenio.vigencia_fim)}
+            </td>
+          </tr>
+          <tr className="total-row">
+            <td colSpan={4} className="center">Total</td>
+            <td className="num">{formatBRL(c.convenio.valor_total).replace("R$", "").trim()}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
 
-        <Cell>2024/103819</Cell>
-        <Cell>{c.convenio.numero}</Cell>
-        <Cell>—</Cell>
-        <Cell>{c.convenio.objeto}</Cell>
-        <Cell className="text-right font-semibold">{formatBRL(c.convenio.valor_total)}</Cell>
-        <Cell className="text-center">{formatDate(c.convenio.vigencia_inicio)} à {formatDate(c.convenio.vigencia_fim)}</Cell>
-      </div>
+      {/* 3.1 — Demonstrativo da Receita e Despesa */}
+      <h2 className="secao">3 — Demonstrativos Financeiros</h2>
+      <h3 className="subsecao">3.1 — Demonstrativo da Receita e Despesa</h3>
 
-      {/* 3 — DEMONSTRATIVOS FINANCEIROS */}
-      <SecaoTitulo>3 - Demonstrativos Financeiros</SecaoTitulo>
+      <table>
+        <thead>
+          <tr>
+            <th style={{ width: "34%" }}>Receita</th>
+            <th style={{ width: "12%" }}>Valor (R$)</th>
+            <th style={{ width: "24%" }}>Grupo</th>
+            <th style={{ width: "20%" }}>Despesa</th>
+            <th style={{ width: "10%" }}>Valor (R$)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>(A) Repasses Municipais no Período</td>
+            <td className="num">{formatBRL(c.receita.repasses_municipais).replace("R$", "").trim()}</td>
+            <td rowSpan={5} className="center label">(1) Recursos Humanos</td>
+            <td>(1.1) Salários e Adicionais</td>
+            <td className="num">{formatBRL(c.despesa.rh.linhas[0]?.valor ?? 0).replace("R$", "").trim()}</td>
+          </tr>
+          <tr>
+            <td>(B) Rendimentos de Repasses Municipais</td>
+            <td className="num">{formatBRL(c.receita.rendimentos_aplicacao).replace("R$", "").trim()}</td>
+            <td>(1.2) Encargos patronais, sociais e trabalhistas</td>
+            <td className="num">{formatBRL(c.despesa.rh.linhas[1]?.valor ?? 0).replace("R$", "").trim()}</td>
+          </tr>
+          <tr>
+            <td>(C) Recursos da OSC</td>
+            <td className="num">{formatBRL(c.receita.recursos_osc).replace("R$", "").trim()}</td>
+            <td>(1.3) Provisionamento (férias, 13º, aviso, multa FGTS)</td>
+            <td className="num">{formatBRL(c.despesa.rh.linhas[2]?.valor ?? 0).replace("R$", "").trim()}</td>
+          </tr>
+          <tr>
+            <td>(D) Outras Receitas</td>
+            <td className="num">{formatBRL(c.receita.outras_receitas).replace("R$", "").trim()}</td>
+            <td>(1.4) Vale Transporte</td>
+            <td className="num">{formatBRL(c.despesa.rh.linhas[3]?.valor ?? 0).replace("R$", "").trim()}</td>
+          </tr>
+          <tr>
+            <td>(E) Saldo do Período Anterior</td>
+            <td className="num">{formatBRL(c.receita.saldo_periodo_anterior).replace("R$", "").trim()}</td>
+            <td>(1.5) Exames Admissionais/Demissionais</td>
+            <td className="num">{formatBRL(c.despesa.rh.linhas[4]?.valor ?? 0).replace("R$", "").trim()}</td>
+          </tr>
 
-      <SecaoSubtitulo>3.1 — Demonstrativo da Receita e Despesa</SecaoSubtitulo>
-      <div className="border border-slate-400 print:border-black grid grid-cols-[1fr_120px_1fr_120px_120px] text-[9pt]">
-        <CellH>Receita</CellH>
-        <CellH className="text-right">Valor</CellH>
-        <CellH>Despesa</CellH>
-        <CellH className="text-right">Valor</CellH>
-        <CellH className="text-right">N.E.</CellH>
+          {c.despesa.materiais.linhas.map((l, i) => (
+            <tr key={`m${i}`}>
+              <td></td><td></td>
+              {i === 0 && (
+                <td rowSpan={c.despesa.materiais.linhas.length || 1} className="center label">
+                  (2) Materiais de Consumo
+                </td>
+              )}
+              <td>({l.codigo}) {l.nome}</td>
+              <td className="num">{formatBRL(l.valor).replace("R$", "").trim()}</td>
+            </tr>
+          ))}
 
-        <Cell>(A) Repasses Municipais no Período</Cell>
-        <Cell className="text-right">{formatBRL(c.receita.repasses_municipais)}</Cell>
-        <Cell label className="bg-slate-50">(1) Recursos Humanos</Cell>
-        <Cell className="text-right font-semibold">{formatBRL(c.despesa.rh.total)}</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.rh.total)}</Cell>
+          {c.despesa.servicos.linhas.map((l, i) => (
+            <tr key={`s${i}`}>
+              <td></td><td></td>
+              {i === 0 && (
+                <td rowSpan={c.despesa.servicos.linhas.length || 1} className="center label">
+                  (3) Prestação de Serviços
+                </td>
+              )}
+              <td>({l.codigo}) {l.nome}</td>
+              <td className="num">{formatBRL(l.valor).replace("R$", "").trim()}</td>
+            </tr>
+          ))}
 
-        <Cell>(B) Rendimentos de Repasses Municipais</Cell>
-        <Cell className="text-right">{formatBRL(c.receita.rendimentos_aplicacao)}</Cell>
-        {c.despesa.rh.linhas[0] ? <SubRubrica l={c.despesa.rh.linhas[0]} /> : <EmptyRub />}
+          {c.despesa.locacao.linhas.map((l, i) => (
+            <tr key={`l${i}`}>
+              <td></td><td></td>
+              {i === 0 && (
+                <td rowSpan={c.despesa.locacao.linhas.length || 1} className="center label">
+                  (4) Locação de Bens
+                </td>
+              )}
+              <td>({l.codigo}) {l.nome}</td>
+              <td className="num">{formatBRL(l.valor).replace("R$", "").trim()}</td>
+            </tr>
+          ))}
 
-        <Cell>(C) Recursos da OSC</Cell>
-        <Cell className="text-right">{formatBRL(c.receita.recursos_osc)}</Cell>
-        {c.despesa.rh.linhas[1] ? <SubRubrica l={c.despesa.rh.linhas[1]} /> : <EmptyRub />}
+          <tr>
+            <td></td><td></td>
+            <td colSpan={2} className="label">(5) Outras Despesas</td>
+            <td className="num">{formatBRL(c.despesa.outras).replace("R$", "").trim()}</td>
+          </tr>
+          <tr>
+            <td></td><td></td>
+            <td colSpan={2} className="label">(6) Valores Devolvidos ao Município</td>
+            <td className="num">{formatBRL(c.despesa.devolvido).replace("R$", "").trim()}</td>
+          </tr>
+          <tr>
+            <td className="label">(F) Saldo p/ Próximo Período (transporte)</td>
+            <td className="num bold">{formatBRL(c.despesa.saldo_proximo).replace("R$", "").trim()}</td>
+            <td colSpan={2} className="label">(7) Saldo para o Próximo Período</td>
+            <td className="num bold">{formatBRL(c.despesa.saldo_proximo).replace("R$", "").trim()}</td>
+          </tr>
+          <tr className="total-row">
+            <td>Total (A+B+C+D+E)</td>
+            <td className="num">{formatBRL(c.receita.total).replace("R$", "").trim()}</td>
+            <td colSpan={2}>Total (1+2+3+4+5+6+7)</td>
+            <td className="num">{formatBRL(c.despesa.total).replace("R$", "").trim()}</td>
+          </tr>
+        </tbody>
+      </table>
 
-        <Cell>(D) Outras Receitas</Cell>
-        <Cell className="text-right">{formatBRL(c.receita.outras_receitas)}</Cell>
-        {c.despesa.rh.linhas[2] ? <SubRubrica l={c.despesa.rh.linhas[2]} /> : <EmptyRub />}
+      {/* 3.2 — Conciliação Bancária */}
+      <h3 className="subsecao">3.2 — Conciliação Bancária</h3>
+      <table>
+        <tbody>
+          <tr>
+            <td className="label" style={{ width: "13%" }}>Banco:</td>
+            <td>{c.convenio.banco ?? "—"}</td>
+            <td className="label" style={{ width: "10%" }}>Agência:</td>
+            <td style={{ width: "10%" }}>{c.convenio.agencia ?? "—"}</td>
+            <td className="label" style={{ width: "13%" }}>Conta:</td>
+            <td>{c.convenio.conta_corrente ?? "—"}</td>
+          </tr>
+          <tr>
+            <td colSpan={5} className="label">(A) Saldo no Extrato Bancário em: {formatDate(c.conciliacao.data_extrato)}</td>
+            <td className="num bold">{formatBRL(c.conciliacao.saldo_extrato).replace("R$", "").trim()}</td>
+          </tr>
+          <tr><td colSpan={6} className="label">(B) Total de Créditos Pendentes</td></tr>
+          <LinhaConcil label="Repasses Municipais no Período" valor={c.conciliacao.creditos_pendentes_repasses} />
+          <LinhaConcil label="Rendimentos de Repasses Municipais" valor={c.conciliacao.creditos_pendentes_rendimentos} />
+          <LinhaConcil label="Recursos da OSC" valor={c.conciliacao.creditos_pendentes_osc} />
+          <LinhaConcil label="Outras Receitas" valor={c.conciliacao.creditos_pendentes_outras} />
+          <tr><td colSpan={6} className="label">(C) Total de Débitos Pendentes</td></tr>
+          <LinhaConcil label="Recursos Humanos" valor={c.conciliacao.debitos_pendentes_rh} />
+          <LinhaConcil label="Materiais de Consumo" valor={c.conciliacao.debitos_pendentes_materiais} />
+          <LinhaConcil label="Locação de Bens" valor={c.conciliacao.debitos_pendentes_locacao} />
+          <LinhaConcil label="Prestação de Serviços" valor={c.conciliacao.debitos_pendentes_servicos} />
+          <LinhaConcil label="Outras Despesas" valor={c.conciliacao.debitos_pendentes_outras} />
+          <tr className="total-row">
+            <td colSpan={5}>(A + B − C) = Saldo Contábil em: {formatDate(c.conciliacao.data_extrato)}</td>
+            <td className="num">{formatBRL(c.conciliacao.saldo_contabil).replace("R$", "").trim()}</td>
+          </tr>
+        </tbody>
+      </table>
 
-        <Cell>(E) Saldo do Período Anterior</Cell>
-        <Cell className="text-right">{formatBRL(c.receita.saldo_periodo_anterior)}</Cell>
-        {c.despesa.rh.linhas[3] ? <SubRubrica l={c.despesa.rh.linhas[3]} /> : <EmptyRub />}
-
-        <Cell label className="bg-slate-50">Total (A+B+C+D+E)</Cell>
-        <Cell className="text-right font-bold bg-slate-50">{formatBRL(c.receita.total)}</Cell>
-        {c.despesa.rh.linhas[4] ? <SubRubrica l={c.despesa.rh.linhas[4]} /> : <EmptyRub />}
-
-        <Cell colSpan={2}></Cell>
-        <Cell label className="bg-slate-50">(2) Materiais de Consumo</Cell>
-        <Cell className="text-right font-semibold">{formatBRL(c.despesa.materiais.total)}</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.materiais.total)}</Cell>
-
-        {c.despesa.materiais.linhas.map((l, i) => (
-          <Linha3 key={`m${i}`} l={l} />
-        ))}
-
-        <Cell colSpan={2}></Cell>
-        <Cell label className="bg-slate-50">(3) Prestação de Serviços</Cell>
-        <Cell className="text-right font-semibold">{formatBRL(c.despesa.servicos.total)}</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.servicos.total)}</Cell>
-
-        {c.despesa.servicos.linhas.map((l, i) => (
-          <Linha3 key={`s${i}`} l={l} />
-        ))}
-
-        <Cell colSpan={2}></Cell>
-        <Cell label className="bg-slate-50">(4) Locação de Bens</Cell>
-        <Cell className="text-right font-semibold">{formatBRL(c.despesa.locacao.total)}</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.locacao.total)}</Cell>
-
-        {c.despesa.locacao.linhas.map((l, i) => (
-          <Linha3 key={`l${i}`} l={l} />
-        ))}
-
-        <Cell colSpan={2}></Cell>
-        <Cell>(5) Outras Despesas</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.outras)}</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.outras_ne)}</Cell>
-
-        <Cell colSpan={2}></Cell>
-        <Cell>(6) Valores Devolvidos ao Município</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.devolvido)}</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.devolvido_ne)}</Cell>
-
-        <Cell colSpan={2}></Cell>
-        <Cell>(7) Saldo para o Próximo Período</Cell>
-        <Cell className="text-right font-semibold">{formatBRL(c.despesa.saldo_proximo)}</Cell>
-        <Cell className="text-right">{formatBRL(c.despesa.saldo_proximo_ne)}</Cell>
-
-        <Cell colSpan={2}></Cell>
-        <Cell label className="bg-slate-100">Total (1+2+3+4+5+6+7)</Cell>
-        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.despesa.total)}</Cell>
-        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.despesa.total_ne)}</Cell>
-      </div>
-
-      {/* 3.2 Conciliação */}
-      <SecaoSubtitulo>3.2 - Conciliação Bancária</SecaoSubtitulo>
-      <div className="border border-slate-400 print:border-black grid grid-cols-[80px_1fr_100px_140px_120px] text-[9pt]">
-        <CellH>Banco</CellH>
-        <CellH>{c.convenio.banco ?? "—"}</CellH>
-        <CellH>Agência: {c.convenio.agencia ?? "—"}</CellH>
-        <CellH>Conta Bancária:</CellH>
-        <CellH>{c.convenio.conta_corrente ?? "—"}</CellH>
-
-        <Cell colSpan={4}>(A) Saldo no Extrato Bancário em: {formatDate(c.conciliacao.data_extrato)}</Cell>
-        <Cell className="text-right">{formatBRL(c.conciliacao.saldo_extrato)}</Cell>
-
-        <Cell label colSpan={5}>(B) Total de Créditos Pendentes</Cell>
-        <LinhaPenden label="Repasses Municipais no Período" valor={c.conciliacao.creditos_pendentes_repasses} />
-        <LinhaPenden label="Rendimentos de Repasses Municipais" valor={c.conciliacao.creditos_pendentes_rendimentos} />
-        <LinhaPenden label="Recursos da OSC" valor={c.conciliacao.creditos_pendentes_osc} />
-        <LinhaPenden label="Outras Receitas" valor={c.conciliacao.creditos_pendentes_outras} />
-
-        <Cell label colSpan={5}>(C) Total de Débitos Pendentes</Cell>
-        <LinhaPenden label="Recursos Humanos" valor={c.conciliacao.debitos_pendentes_rh} />
-        <LinhaPenden label="Materiais de Consumo" valor={c.conciliacao.debitos_pendentes_materiais} />
-        <LinhaPenden label="Locação de Bens" valor={c.conciliacao.debitos_pendentes_locacao} />
-        <LinhaPenden label="Prestação de Serviços" valor={c.conciliacao.debitos_pendentes_servicos} />
-        <LinhaPenden label="Outras Despesas" valor={c.conciliacao.debitos_pendentes_outras} />
-
-        <Cell label colSpan={4} className="bg-slate-100">(A+B+C) = Saldo Contábil em: {formatDate(c.conciliacao.data_extrato)}</Cell>
-        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.conciliacao.saldo_contabil)}</Cell>
-      </div>
-
-      {/* 3.3 Pagamentos */}
-      <SecaoSubtitulo>3.3 - Relação de Pagamentos</SecaoSubtitulo>
-      <TabelaPagamentos titulo="3.3.1 — Recursos Humanos" linhas={c.pagamentos.rh} colItem="Itens de Orçamento" />
-      <TabelaPagamentos titulo="3.3.2 — Materiais de Consumo" linhas={c.pagamentos.materiais} colItem="Itens de Orçamento" />
-      <TabelaPagamentos titulo="3.3.3 — Prestação de Serviços" linhas={c.pagamentos.servicos} colItem="Itens de Orçamento" />
-      <TabelaPagamentos titulo="3.3.4 — Locação de Bens" linhas={c.pagamentos.locacao} colItem="Itens de Orçamento" />
+      {/* 3.3 — Relação de Pagamentos */}
+      <h3 className="subsecao">3.3 — Relação de Pagamentos</h3>
+      <TabelaPagamentos titulo="3.3.1 — Recursos Humanos" linhas={c.pagamentos.rh} colItem="Item de Orçamento" />
+      <TabelaPagamentos titulo="3.3.2 — Materiais de Consumo" linhas={c.pagamentos.materiais} colItem="Item de Orçamento" />
+      <TabelaPagamentos titulo="3.3.3 — Prestação de Serviços" linhas={c.pagamentos.servicos} colItem="Item de Orçamento" />
+      <TabelaPagamentos titulo="3.3.4 — Locação de Bens" linhas={c.pagamentos.locacao} colItem="Item de Orçamento" />
       <TabelaPagamentos titulo="3.3.5 — Outras Despesas" linhas={c.pagamentos.outras} colItem="Descrição" />
       <TabelaPagamentos titulo="3.3.6 — Valores Devolvidos ao Município" linhas={c.pagamentos.devolvidos} colItem="Motivo" />
 
-      <div className="border border-slate-400 print:border-black grid grid-cols-[1fr_140px] text-[9pt] bg-slate-100">
-        <Cell label>Total Geral (3.3.1+3.3.2+3.3.3+3.3.4+3.3.5+3.3.6)</Cell>
-        <Cell className="text-right font-bold">{formatBRL(c.pagamentos.total)}</Cell>
+      <table style={{ marginTop: "4px" }}>
+        <tbody>
+          <tr className="total-row">
+            <td>Total Geral (3.3.1 + 3.3.2 + 3.3.3 + 3.3.4 + 3.3.5 + 3.3.6)</td>
+            <td className="num" style={{ width: "13%" }}>{formatBRL(c.pagamentos.total).replace("R$", "").trim()}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* 4 — Acompanhamento */}
+      <h2 className="secao">4 — Acompanhamento da Execução Financeira</h2>
+      <table style={{ fontSize: "8.5pt" }}>
+        <thead>
+          <tr>
+            <th rowSpan={2} style={{ width: "38%" }}>Descrição</th>
+            <th rowSpan={2}>Previsto Mensal</th>
+            <th colSpan={2}>Realizado no Período</th>
+            <th rowSpan={2}>Previsto Acumulado</th>
+            <th colSpan={2}>Realizado até o Período</th>
+          </tr>
+          <tr>
+            <th>Concedente</th>
+            <th>Total</th>
+            <th>Concedente</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {c.acompanhamento.linhas.map((l) => (
+            <tr key={l.codigo}>
+              <td>({l.codigo}) {l.nome}</td>
+              <td className="num">{formatBRL(l.previsto_mensal).replace("R$", "").trim()}</td>
+              <td className="num">{formatBRL(l.executado_periodo_concedente).replace("R$", "").trim()}</td>
+              <td className="num bold">{formatBRL(l.executado_periodo_total).replace("R$", "").trim()}</td>
+              <td className="num">{formatBRL(l.previsto_acumulado).replace("R$", "").trim()}</td>
+              <td className="num">{formatBRL(l.executado_acumulado_concedente).replace("R$", "").trim()}</td>
+              <td className="num bold">{formatBRL(l.executado_acumulado_total).replace("R$", "").trim()}</td>
+            </tr>
+          ))}
+          <tr className="total-row">
+            <td>Total das Despesas</td>
+            <td></td><td></td>
+            <td className="num">{formatBRL(c.acompanhamento.total_periodo).replace("R$", "").trim()}</td>
+            <td></td><td></td>
+            <td className="num">{formatBRL(c.acompanhamento.total_acumulado).replace("R$", "").trim()}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* 5 — Notas Explicativas */}
+      <h2 className="secao">5 — Notas Explicativas (N.E.)</h2>
+      <div className="obs-bloco">
+        <p style={{ margin: 0, marginBottom: "4px" }}>
+          <strong>NE-1</strong> (3.2) Utilidades Públicas — inclui despesas com energia elétrica, água/esgoto, gás, telefone e internet.
+        </p>
+        {c.prestacao.observacoes && (
+          <p style={{ margin: 0, whiteSpace: "pre-line" }}>{c.prestacao.observacoes}</p>
+        )}
+        <p className="muted" style={{ margin: 0, marginTop: "4px", fontSize: "8pt" }}>
+          * Notas explicativas complementam as informações da planilha.
+        </p>
       </div>
 
-      {/* 4 Acompanhamento */}
-      <SecaoTitulo numero="4">Acompanhamento da Execução Financeira</SecaoTitulo>
-      <div className="border border-slate-400 print:border-black grid grid-cols-[140px_1fr_100px_100px_100px_100px_100px_100px_100px] text-[9pt]">
-        <CellH rowSpan={2}>Descrição</CellH>
-        <CellH rowSpan={2}></CellH>
-        <CellH rowSpan={2}>Previsto Mensal</CellH>
-        <CellH colSpan={2}>Realizado no Período (R$)</CellH>
-        <CellH rowSpan={2}>Previsto Acumulado</CellH>
-        <CellH colSpan={3}>Realizado até o Período (R$)</CellH>
-
-        <CellH>Executado Concedente</CellH>
-        <CellH>Total</CellH>
-        <CellH>Executado Concedente</CellH>
-        <CellH>OSC</CellH>
-        <CellH>Total</CellH>
-
-        {c.acompanhamento.linhas.map((l) => (
-          <LinhaAcomp key={l.codigo} l={l} />
-        ))}
-
-        <Cell label colSpan={4} className="bg-slate-100">Total das Despesas</Cell>
-        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.acompanhamento.total_periodo)}</Cell>
-        <Cell colSpan={3} className="bg-slate-100"></Cell>
-        <Cell className="text-right font-bold bg-slate-100">{formatBRL(c.acompanhamento.total_acumulado)}</Cell>
-      </div>
-
-      {/* 5 Notas */}
-      <SecaoTitulo numero="5">Notas Explicativas (N.E.)</SecaoTitulo>
-      <div className="border border-slate-400 print:border-black p-3 text-[9pt] space-y-2">
-        <p>1-(3.2) Utilidades Públicas — energia elétrica, água, esgoto, gás, telefone e internet.</p>
-        {c.prestacao.observacoes && <p className="whitespace-pre-line text-slate-700">{c.prestacao.observacoes}</p>}
-        <p className="italic text-slate-500">* Notas explicativas complementam as informações da planilha.</p>
-      </div>
-
-      {/* 6 Assinaturas — layout com espaço amplo pra cada assinatura */}
-      <SecaoTitulo numero="6">Assinaturas</SecaoTitulo>
-      <div className="space-y-4 print:break-inside-avoid">
+      {/* 6 — Assinaturas */}
+      <h2 className="secao">6 — Assinaturas</h2>
+      <div className="assinaturas-wrap">
         <BlocoAssinatura
           titulo="Responsável da OSC (Gestor)"
           nome={c.convenio.gestor_osc}
@@ -273,47 +468,80 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
           crc={c.convenio.contabilista_crc}
         />
       </div>
+
+      <div className="footer-doc">
+        Nova Iguaçu/RJ — Prestação de Contas elaborada conforme Lei Federal 13.019/2014 (art. 63) e Decreto Municipal 11.252/2018
+      </div>
     </div>
   );
 }
 
 // =========== Componentes auxiliares ===========
-function SecaoTitulo({ numero, children }: { numero?: string; children: React.ReactNode }) {
-  return (
-    <h2 className="text-[10pt] font-bold uppercase tracking-wide text-slate-900 mt-4 mb-1 print:mt-3">
-      {numero && <span className="mr-1">{numero} —</span>}{children}
-    </h2>
-  );
+interface Pagamento {
+  data: string; credor: string; cpf_cnpj: string | null;
+  item_orcamento: string; nf_rec: string | null; ob: string | null; valor: number;
 }
 
-function SecaoSubtitulo({ children }: { children: React.ReactNode }) {
+function TabelaPagamentos({ titulo, linhas, colItem }: {
+  titulo: string; linhas: Pagamento[]; colItem: string;
+}) {
+  const total = linhas.reduce((s, l) => s + l.valor, 0);
   return (
-    <h3 className="text-[10pt] font-semibold text-slate-800 mt-3 mb-1 bg-slate-100 px-2 py-1 print:bg-slate-200">
-      {children}
-    </h3>
-  );
-}
-
-interface CellProps {
-  children?: React.ReactNode;
-  label?: boolean;
-  className?: string;
-  colSpan?: number;
-  rowSpan?: number;
-}
-
-function Cell({ children, label, className, colSpan }: CellProps) {
-  return (
-    <div
-      className={cn(
-        "border-r border-b border-slate-400 print:border-black p-1.5 text-[9pt]",
-        label && "font-semibold bg-slate-50",
-        className
-      )}
-      style={colSpan ? { gridColumn: `span ${colSpan} / span ${colSpan}` } : undefined}
-    >
-      {children}
+    <div style={{ marginTop: "8px" }}>
+      <h3 className="subsecao" style={{ marginBottom: 0 }}>{titulo}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style={{ width: "9%" }}>Data</th>
+            <th style={{ width: "26%" }}>Credor</th>
+            <th style={{ width: "14%" }}>CPF/CNPJ</th>
+            <th>{colItem}</th>
+            <th style={{ width: "9%" }}>NF/Rec.</th>
+            <th style={{ width: "9%" }}>O.B.</th>
+            <th style={{ width: "11%" }}>Valor (R$)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="center muted">Sem lançamentos no período.</td>
+              <td className="num">0,00</td>
+            </tr>
+          ) : (
+            linhas.map((l, i) => (
+              <tr key={i}>
+                <td className="center">{formatDate(l.data)}</td>
+                <td>{l.credor}</td>
+                <td className="center">
+                  {l.cpf_cnpj
+                    ? (l.cpf_cnpj.replace(/\D/g, "").length === 14
+                        ? formatCNPJ(l.cpf_cnpj)
+                        : formatCPF(l.cpf_cnpj))
+                    : "—"}
+                </td>
+                <td>{l.item_orcamento}</td>
+                <td className="center">{l.nf_rec ?? "—"}</td>
+                <td className="center">{l.ob ?? "—"}</td>
+                <td className="num">{formatBRL(l.valor).replace("R$", "").trim()}</td>
+              </tr>
+            ))
+          )}
+          <tr className="total-row">
+            <td colSpan={6} className="center">Total {titulo.split("—")[0]?.trim()}</td>
+            <td className="num">{formatBRL(total).replace("R$", "").trim()}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+  );
+}
+
+function LinhaConcil({ label, valor }: { label: string; valor: number }) {
+  return (
+    <tr>
+      <td colSpan={5} style={{ paddingLeft: "20px" }}>{label}</td>
+      <td className="num">{formatBRL(valor).replace("R$", "").trim()}</td>
+    </tr>
   );
 }
 
@@ -321,132 +549,19 @@ function BlocoAssinatura({ titulo, nome, cpf, data, crc }: {
   titulo: string; nome: string | null; cpf: string | null; data: string; crc?: string | null;
 }) {
   return (
-    <div className="border border-slate-400 print:border-black rounded-none">
-      <div className="bg-slate-100 print:bg-slate-200 px-3 py-1.5 text-[9pt] font-semibold border-b border-slate-400 print:border-black uppercase tracking-tight">
-        {titulo}
-      </div>
-      <div className="grid grid-cols-[1fr_140px] text-[9pt]">
-        {/* Coluna esquerda: dados + linha de assinatura grande */}
-        <div className="p-3 border-r border-slate-400 print:border-black">
-          <div className="mb-1"><span className="text-slate-500">Nome:</span> <strong>{nome ?? "—"}</strong>{crc && <span className="text-slate-500 ml-2 text-[8pt]">({crc})</span>}</div>
-          <div className="mb-1"><span className="text-slate-500">CPF:</span> {cpf ?? "—"}</div>
-          {/* Linha de assinatura — espaço amplo */}
-          <div className="mt-6 pt-1 border-t border-slate-700 print:border-black text-center text-[8pt] text-slate-500">
-            Assinatura
-          </div>
-        </div>
-        {/* Coluna direita: data */}
-        <div className="p-3 text-center">
-          <div className="text-slate-500 text-[8pt] uppercase tracking-wide">Data</div>
-          <div className="font-semibold mt-1">{data}</div>
-        </div>
+    <div className="assinatura-bloco">
+      <div className="assinatura-titulo">{titulo}</div>
+      <div className="assinatura-linha">
+        <strong>{nome ?? "—"}</strong>
+        {crc && <span> · {crc}</span>}
+        <br />
+        <span style={{ fontSize: "8.5pt" }}>
+          CPF: {cpf ?? "—"} · Data: {data}
+        </span>
       </div>
     </div>
   );
 }
 
-function CellH({ children, className, colSpan, rowSpan }: CellProps) {
-  return (
-    <div
-      className={cn(
-        "border-r border-b border-slate-400 print:border-black p-1.5 text-[9pt] font-semibold bg-slate-100 print:bg-slate-200 uppercase tracking-tight",
-        className
-      )}
-      style={{
-        ...(colSpan ? { gridColumn: `span ${colSpan} / span ${colSpan}` } : {}),
-        ...(rowSpan ? { gridRow: `span ${rowSpan} / span ${rowSpan}` } : {}),
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function SubRubrica({ l }: { l: { codigo: string; nome: string; valor: number; valor_ne: number } }) {
-  return (
-    <>
-      <Cell className="pl-6">({l.codigo}) {l.nome}</Cell>
-      <Cell className="text-right">{formatBRL(l.valor)}</Cell>
-      <Cell className="text-right">{formatBRL(l.valor_ne)}</Cell>
-    </>
-  );
-}
-
-function Linha3({ l }: { l: { codigo: string; nome: string; valor: number; valor_ne: number } }) {
-  return (
-    <>
-      <Cell colSpan={2}></Cell>
-      <SubRubrica l={l} />
-    </>
-  );
-}
-
-function EmptyRub() {
-  return (<><Cell></Cell><Cell></Cell><Cell></Cell></>);
-}
-
-function LinhaPenden({ label, valor }: { label: string; valor: number }) {
-  return (
-    <>
-      <Cell colSpan={4}>{label}</Cell>
-      <Cell className="text-right">{formatBRL(valor)}</Cell>
-    </>
-  );
-}
-
-function LinhaAcomp({ l }: { l: { codigo: string; nome: string; previsto_mensal: number; executado_periodo_concedente: number; executado_periodo_total: number; previsto_acumulado: number; executado_acumulado_concedente: number; executado_acumulado_osc: number; executado_acumulado_total: number } }) {
-  return (
-    <>
-      <Cell className="font-mono">{l.codigo}</Cell>
-      <Cell>{l.nome}</Cell>
-      <Cell className="text-right">{formatBRL(l.previsto_mensal)}</Cell>
-      <Cell className="text-right">{formatBRL(l.executado_periodo_concedente)}</Cell>
-      <Cell className="text-right font-semibold">{formatBRL(l.executado_periodo_total)}</Cell>
-      <Cell className="text-right">{formatBRL(l.previsto_acumulado)}</Cell>
-      <Cell className="text-right">{formatBRL(l.executado_acumulado_concedente)}</Cell>
-      <Cell className="text-right">{formatBRL(l.executado_acumulado_osc)}</Cell>
-      <Cell className="text-right font-semibold">{formatBRL(l.executado_acumulado_total)}</Cell>
-    </>
-  );
-}
-
-function TabelaPagamentos({ titulo, linhas, colItem }: { titulo: string; linhas: { data: string; credor: string; cpf_cnpj: string | null; item_orcamento: string; nf_rec: string | null; ob: string | null; valor: number }[]; colItem: string }) {
-  const total = linhas.reduce((s, l) => s + l.valor, 0);
-  return (
-    <div className="mt-2">
-      <div className="bg-slate-50 px-2 py-1 text-[9pt] font-semibold border border-b-0 border-slate-400 print:border-black">{titulo}</div>
-      <div className="border border-slate-400 print:border-black grid grid-cols-[80px_1fr_120px_1fr_100px_100px_100px] text-[9pt]">
-        <CellH>Data</CellH>
-        <CellH>Credor</CellH>
-        <CellH>CPF / CNPJ nº</CellH>
-        <CellH>{colItem}</CellH>
-        <CellH>NF/Rec. nº</CellH>
-        <CellH>O.B. nº</CellH>
-        <CellH className="text-right">Valor (R$)</CellH>
-        {linhas.length === 0 ? (
-          <Cell colSpan={7} className="text-center text-slate-500 italic">Sem lançamentos no período.</Cell>
-        ) : (
-          linhas.map((l, i) => (
-            <LinhaPag key={i} l={l} />
-          ))
-        )}
-        <Cell label colSpan={6} className="bg-slate-100">Total {titulo.split("—")[0]?.trim()}</Cell>
-        <Cell className="text-right font-bold bg-slate-100">{formatBRL(total)}</Cell>
-      </div>
-    </div>
-  );
-}
-
-function LinhaPag({ l }: { l: { data: string; credor: string; cpf_cnpj: string | null; item_orcamento: string; nf_rec: string | null; ob: string | null; valor: number } }) {
-  return (
-    <>
-      <Cell>{formatDate(l.data)}</Cell>
-      <Cell>{l.credor}</Cell>
-      <Cell>{l.cpf_cnpj ? (l.cpf_cnpj.replace(/\D/g, "").length === 14 ? formatCNPJ(l.cpf_cnpj) : formatCPF(l.cpf_cnpj)) : "—"}</Cell>
-      <Cell>{l.item_orcamento}</Cell>
-      <Cell>{l.nf_rec ?? "—"}</Cell>
-      <Cell>{l.ob ?? "—"}</Cell>
-      <Cell className="text-right font-semibold">{formatBRL(l.valor)}</Cell>
-    </>
-  );
-}
+// Compat: mantém o export unused mas correto
+export const _cnHelper = cn;
