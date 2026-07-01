@@ -108,16 +108,41 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
         }
 
         /* IMPRESSÃO */
+        @page {
+          size: A4;
+          margin: 2cm 1.6cm 2.2cm 1.6cm;   /* topo | direita | base | esquerda */
+        }
+        @page :first {
+          margin-top: 1.6cm;                /* topo menor na 1ª página */
+        }
         @media print {
-          .prestacao-oficial { font-size: 10pt; }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .prestacao-oficial { font-size: 10pt; padding-bottom: 0.6cm; }
           .prestacao-oficial table { page-break-inside: auto; }
-          .prestacao-oficial tr { page-break-inside: avoid; page-break-after: auto; }
+          .prestacao-oficial tr { page-break-inside: avoid; page-break-after: auto; orphans: 3; widows: 3; }
           .prestacao-oficial thead { display: table-header-group; }
+          .prestacao-oficial tfoot { display: table-footer-group; }
           .prestacao-oficial h2.secao, .prestacao-oficial h3.subsecao {
             page-break-after: avoid;
+            break-after: avoid-page;
           }
           .prestacao-oficial .assinaturas-wrap {
             page-break-inside: avoid;
+            break-inside: avoid;
+            margin-top: 28px;
+          }
+          .prestacao-oficial .footer-doc {
+            margin-top: 16px;
+          }
+          /* evita conteúdo colado na borda inferior */
+          .prestacao-oficial > *:last-child {
+            margin-bottom: 0.8cm;
           }
         }
       `}</style>
