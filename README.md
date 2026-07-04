@@ -1,5 +1,9 @@
 # LB Caritas
 
+> **Nota:** este repositório também contém o app **[RCC Grupo Daniel](rcc-grupo-daniel/README.md)**
+> (gestão de grupo de oração — membros, finanças, PIX, agenda), um projeto independente no
+> diretório `rcc-grupo-daniel/`.
+
 Sistema de gestão de convênios públicos (Lei 13.019/2014).
 Cliente piloto: Cáritas Diocesana de Nova Iguaçu — Convênio 001/FMAS/2025 (SEMAS).
 

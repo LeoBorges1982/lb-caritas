@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  /* Identidade RCC Grupo Daniel: azul, branco, dourado, tons suaves */
+  --color-rcc-bg: #f6f8fc;
+  --color-rcc-surface: #ffffff;
+  --color-rcc-border: #e2e8f0;
+  --color-rcc-primary: #1d4ed8;
+  --color-rcc-primary-dark: #1e3a8a;
+  --color-rcc-gold: #d4af37;
+  --color-rcc-soft: #eff4ff;
+}
+
+html,
+body {
+  background: #f6f8fc;
+  color: #0f172a;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Área segura no iOS (notch) para a navegação inferior */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 10pt;
+  }
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}
