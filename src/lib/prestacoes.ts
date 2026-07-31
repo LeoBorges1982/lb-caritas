@@ -285,7 +285,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
       .from("caritas_lancamentos")
       .select(`
         id, data_lancamento, data_pagamento, tipo, status, descricao,
-        fornecedor_nome, fornecedor_documento, documento_numero, valor, valor_pago_total,
+        fornecedor_nome, fornecedor_documento, documento_numero, ordem_bancaria, valor, valor_pago_total,
         categoria_id,
         categoria:caritas_categorias_despesa ( codigo, nome, grupo, valor_previsto )
       `)
@@ -328,6 +328,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
     fornecedor_nome: string | null;
     fornecedor_documento: string | null;
     documento_numero: string | null;
+    ordem_bancaria: string | null;
     valor: number | string;
     valor_pago_total: number | string | null;
     categoria_id: string | null;
@@ -447,7 +448,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
           cpf_cnpj: l.fornecedor_documento,
           item_orcamento: cat?.nome ?? l.descricao,
           nf_rec: l.documento_numero,
-          ob: null,
+          ob: l.ordem_bancaria,
           valor: Number(l.valor),
         };
       });
@@ -466,7 +467,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
         cpf_cnpj: l.fornecedor_documento,
         item_orcamento: l.descricao,
         nf_rec: l.documento_numero,
-        ob: null,
+        ob: l.ordem_bancaria,
         valor: Number(l.valor),
       })),
     devolvidos: lancs
@@ -477,7 +478,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
         cpf_cnpj: l.fornecedor_documento,
         item_orcamento: l.descricao,
         nf_rec: l.documento_numero,
-        ob: null,
+        ob: l.ordem_bancaria,
         valor: Number(l.valor),
       })),
     total: total_despesas_periodo,

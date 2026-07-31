@@ -22,6 +22,7 @@ type Payload = {
   documento_numero: string | null;
   documento_data: string | null;
   documento_valor: number | null;
+  ordem_bancaria: string | null;
   forma_pagamento: FormaPagamento | null;
   conta_origem: ContaOrigem | null;
   status: "previsto" | "realizado";
@@ -71,6 +72,7 @@ function parseForm(fd: FormData): Payload {
     documento_numero: get("documento_numero"),
     documento_data: get("documento_data"),
     documento_valor: getN("documento_valor"),
+    ordem_bancaria: get("ordem_bancaria"),
     forma_pagamento: get("forma_pagamento") as FormaPagamento | null,
     conta_origem: get("conta_origem") as ContaOrigem | null,
     status: (get("status") || "previsto") as "previsto" | "realizado",

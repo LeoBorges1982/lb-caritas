@@ -276,6 +276,16 @@ export default function LancamentoForm({ modo, opcoes, inicial, action, vedacoes
                 className={inputCn}
               />
             </Field>
+
+            <Field label="O.B. / nº do comprovante" hint="Nº da ordem bancária, PIX ou TED — sai na coluna O.B. da prestação">
+              <input
+                name="ordem_bancaria"
+                type="text"
+                placeholder="Ex: OB 2026/00123"
+                defaultValue={inicial?.ordem_bancaria ?? ""}
+                className={inputCn}
+              />
+            </Field>
           </Grid>
         </Section>
       )}

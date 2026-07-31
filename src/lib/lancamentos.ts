@@ -30,6 +30,7 @@ export interface Lancamento {
   documento_numero: string | null;
   documento_data: string | null;
   documento_valor: number | null;
+  ordem_bancaria: string | null;
   forma_pagamento: FormaPagamento | null;
   conta_origem: ContaOrigem | null;
   status: StatusLancamento;
@@ -130,7 +131,7 @@ export async function listarLancamentos(filtros: FiltroLancamentos = {}): Promis
       tipo, data_lancamento, data_pagamento, descricao, valor,
       fornecedor_nome, fornecedor_documento,
       documento_tipo, documento_numero, documento_data, documento_valor,
-      forma_pagamento, conta_origem,
+      ordem_bancaria, forma_pagamento, conta_origem,
       status, conciliado_em, glosa_motivo, glosa_valor,
       observacoes, criado_em, atualizado_em,
       convenio:caritas_convenios ( numero ),

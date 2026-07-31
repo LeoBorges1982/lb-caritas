@@ -144,6 +144,7 @@ export default async function LancamentoDetalhePage({ params }: PageProps) {
                   {l.documento_data && <span>Data {formatDate(l.documento_data)}</span>}
                   {l.documento_data && l.documento_valor !== null && <span> · </span>}
                   {l.documento_valor !== null && <span>Valor {formatBRL(l.documento_valor)}</span>}
+                  {l.ordem_bancaria && <span> · O.B. {l.ordem_bancaria}</span>}
                 </div>
               </div>
             )}
