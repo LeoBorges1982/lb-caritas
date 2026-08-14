@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
+import { usePathname } from "next/navigation";
 import { MessageCircle, X, Send, Loader2, User, Sparkles, Trash2 } from "lucide-react";
 
 interface Mensagem {
@@ -16,17 +18,26 @@ export default function AjudaChat() {
   const [enviando, setEnviando] = useState(false);
   const [imprimindo, setImprimindo] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname() ?? "";
 
-  // Sai do DOM durante a impressão: como é position:fixed, o navegador
-  // repetiria o botão em toda folha do PDF.
+  // Telas que viram documento oficial (vão pra SEMAS impressas): o chat
+  // nem é montado, porque position:fixed se repete em toda folha do PDF.
+  const ehPaginaDocumento =
+    pathname.startsWith("/imprimir") ||
+    pathname.startsWith("/balancetes/") ||
+    (pathname.startsWith("/prestacoes/") && !pathname.endsWith("/nova"));
+
+  // Nas demais telas, sai do DOM enquanto o diálogo de impressão está aberto.
+  // flushSync é obrigatório: sem ele o React agenda o re-render e o navegador
+  // captura a página antes do botão sumir.
   useEffect(() => {
-    const aoImprimir = () => setImprimindo(true);
-    const aoTerminar = () => setImprimindo(false);
+    const aoImprimir = () => flushSync(() => setImprimindo(true));
+    const aoTerminar = () => flushSync(() => setImprimindo(false));
     window.addEventListener("beforeprint", aoImprimir);
     window.addEventListener("afterprint", aoTerminar);
 
     const media = window.matchMedia("print");
-    const aoMudar = (e: MediaQueryListEvent) => setImprimindo(e.matches);
+    const aoMudar = (e: MediaQueryListEvent) => flushSync(() => setImprimindo(e.matches));
     media.addEventListener("change", aoMudar);
 
     return () => {
@@ -92,7 +103,7 @@ export default function AjudaChat() {
     if (typeof window !== "undefined") sessionStorage.removeItem("lb_caritas_ajuda_chat");
   }
 
-  if (imprimindo) return null;
+  if (imprimindo || ehPaginaDocumento) return null;
 
   return (
     <>
