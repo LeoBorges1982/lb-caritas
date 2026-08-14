@@ -14,7 +14,27 @@ export default function AjudaChat() {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [pergunta, setPergunta] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [imprimindo, setImprimindo] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+
+  // Sai do DOM durante a impressão: como é position:fixed, o navegador
+  // repetiria o botão em toda folha do PDF.
+  useEffect(() => {
+    const aoImprimir = () => setImprimindo(true);
+    const aoTerminar = () => setImprimindo(false);
+    window.addEventListener("beforeprint", aoImprimir);
+    window.addEventListener("afterprint", aoTerminar);
+
+    const media = window.matchMedia("print");
+    const aoMudar = (e: MediaQueryListEvent) => setImprimindo(e.matches);
+    media.addEventListener("change", aoMudar);
+
+    return () => {
+      window.removeEventListener("beforeprint", aoImprimir);
+      window.removeEventListener("afterprint", aoTerminar);
+      media.removeEventListener("change", aoMudar);
+    };
+  }, []);
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -71,6 +91,8 @@ export default function AjudaChat() {
     setMensagens([]);
     if (typeof window !== "undefined") sessionStorage.removeItem("lb_caritas_ajuda_chat");
   }
+
+  if (imprimindo) return null;
 
   return (
     <>
