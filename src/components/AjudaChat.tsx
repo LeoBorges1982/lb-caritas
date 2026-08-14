@@ -76,7 +76,7 @@ export default function AjudaChat() {
     <>
       {!aberto && (
         <button onClick={() => setAberto(true)}
-          className="fixed bottom-6 right-6 z-40 bg-gradient-to-br from-[#1e3a8a] to-[#d4af37] text-white p-4 rounded-full shadow-xl hover:scale-105 transition-transform"
+          className="print:hidden fixed bottom-6 right-6 z-40 bg-gradient-to-br from-[#1e3a8a] to-[#d4af37] text-white p-4 rounded-full shadow-xl hover:scale-105 transition-transform"
           title="Dúvidas sobre o sistema ou convênios?">
           <MessageCircle size={22} />
           {mensagens.length === 0 && (
@@ -86,7 +86,7 @@ export default function AjudaChat() {
       )}
 
       {aberto && (
-        <div className="fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+        <div className="print:hidden fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-3rem)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
           <div className="bg-gradient-to-r from-[#1e3a8a] to-[#1e40af] text-white px-4 py-3 flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
               <Sparkles size={18} />

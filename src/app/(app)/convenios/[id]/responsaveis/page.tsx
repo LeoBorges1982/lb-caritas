@@ -69,7 +69,7 @@ export default async function ResponsaveisPage({ params, searchParams }: PagePro
               label="Valor Repasse Público (R$)"
               name="valor_repasse"
               defaultValue={conv.valor_repasse ? conv.valor_repasse.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : ""}
-              placeholder="1.555.404,44"
+              placeholder="155.404,44"
             />
             <Field
               label="Contrapartida OSC (R$)"
@@ -81,7 +81,7 @@ export default async function ResponsaveisPage({ params, searchParams }: PagePro
               label="Valor Global (Repasse + Contrapartida)"
               name="valor_total"
               defaultValue={conv.valor_total ? conv.valor_total.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : ""}
-              placeholder="1.555.404,44"
+              placeholder="155.404,44"
             />
           </Grid3>
           <div className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2">
