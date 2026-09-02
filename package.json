@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "testar": "tsx scripts/testar-assinatura.ts"
   },
   "dependencies": {
     "next": "^15.1.0",
