@@ -1,0 +1,7 @@
+# Scripts shell SEMPRE com fim de linha LF, mesmo commitados do Windows.
+# Com CRLF o Linux falha com "bad interpreter: /usr/bin/env bash^M".
+*.sh text eol=lf
+
+# Dockerfile e entrypoints tambem sao lidos por ferramentas Unix.
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
