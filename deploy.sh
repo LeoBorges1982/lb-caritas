@@ -16,7 +16,18 @@ SERVICE="lb-caritas_app"
 cd "$APP_DIR"
 
 echo "==> Atualizando codigo"
-git pull
+# NAO usar "git pull": diferenca de fim de linha (CRLF/LF) faz o git ver todo
+# arquivo como modificado e o pull aborta com "You have unstaged changes".
+# O servidor e alvo de deploy, nao lugar de editar codigo: espelha o remoto.
+git fetch origin
+
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  BACKUP="/root/lb-caritas-descartado-$(git rev-parse --short HEAD).patch"
+  git diff HEAD > "$BACKUP" || true
+  echo "    ATENCAO: havia alteracoes locais. Salvas em $BACKUP antes de descartar."
+fi
+
+git reset --hard origin/main
 
 echo "==> Carregando variaveis do .env"
 if [ ! -f .env ]; then
