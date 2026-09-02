@@ -136,8 +136,23 @@ export async function listarAssinaturas(
     .eq("revogada", false)
     .order("assinado_em");
 
-  if (error) throw new Error(`Erro ao listar assinaturas: ${error.message}`);
+  if (error) {
+    // Resiliente: se a migração 006 ainda não rodou, a prestação continua
+    // abrindo normalmente — apenas sem o bloco de assinaturas.
+    if (tabelaInexistente(error)) return [];
+    throw new Error(`Erro ao listar assinaturas: ${error.message}`);
+  }
   return (data ?? []) as Assinatura[];
+}
+
+/** true quando o erro é "tabela caritas_assinaturas não existe". */
+function tabelaInexistente(error: { code?: string; message?: string }): boolean {
+  return (
+    error.code === "42P01" || // undefined_table (Postgres)
+    error.code === "PGRST205" || // table not found in schema cache (PostgREST)
+    /caritas_assinaturas/.test(error.message ?? "") &&
+      /does not exist|not find|schema cache/i.test(error.message ?? "")
+  );
 }
 
 /**
