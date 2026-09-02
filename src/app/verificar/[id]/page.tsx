@@ -9,7 +9,7 @@ import {
   hashLegivel,
 } from "@/lib/assinaturas";
 import { ESCRITORIO } from "@/lib/constants";
-import { formatBRL, formatDate, formatCNPJ, formatCPF } from "@/lib/utils";
+import { formatBRL, formatDate, formatCNPJ, mascararCPF } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -114,9 +114,18 @@ export default async function VerificarPage({ params }: PageProps) {
               <li key={s.papel} className="py-3 flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <div className="text-[11px] uppercase tracking-wide text-slate-500">{s.rotulo}</div>
-                  <div className="text-sm font-medium text-slate-800">{s.nome ?? "—"}</div>
-                  {s.cpf && <div className="text-xs text-slate-500">CPF {formatCPF(s.cpf)}</div>}
-                  {s.registro && <div className="text-xs text-slate-500">{s.registro}</div>}
+                  <div className="text-sm font-medium text-slate-800">
+                    {s.assinatura ? (s.nome ?? "—") : <span className="text-slate-400">aguardando assinatura</span>}
+                  </div>
+                  {/* Só publica dado de quem efetivamente assinou, e com o CPF
+                      mascarado: a página serve para conferir autenticidade,
+                      não para divulgar o documento de identidade de ninguém. */}
+                  {s.assinatura && s.cpf && (
+                    <div className="text-xs text-slate-500">CPF {mascararCPF(s.cpf)}</div>
+                  )}
+                  {s.assinatura && s.registro && (
+                    <div className="text-xs text-slate-500">{s.registro}</div>
+                  )}
                 </div>
                 <div className="text-right">
                   {s.assinatura ? (

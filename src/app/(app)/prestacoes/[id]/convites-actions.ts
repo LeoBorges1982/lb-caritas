@@ -12,6 +12,7 @@ import {
   type PapelAssinatura,
 } from "@/lib/assinaturas";
 import { gerarToken, listarConvites } from "@/lib/convites";
+import { podeGerirConvenio } from "@/lib/acessos";
 
 /**
  * Gera os links de assinatura de uma prestação.
@@ -27,6 +28,10 @@ export async function gerarConvites(prestacaoId: string) {
 
   const c = await consolidarPrestacao(prestacaoId);
   if (!c) throw new Error("Prestação não encontrada.");
+
+  if (!(await podeGerirConvenio(sessao.sub, c.convenio.id, sessao.email))) {
+    throw new Error("Você não tem permissão para gerar links neste convênio.");
+  }
 
   const hash = calcularHashPrestacao(c);
   const assinaturas = await listarAssinaturas("prestacao", prestacaoId);
@@ -91,6 +96,18 @@ export async function cancelarConvite(conviteId: string, prestacaoId: string) {
   if (!sessao) throw new Error("Sessão expirada.");
 
   const supabase = adminClient();
+
+  const { data: convite } = await supabase
+    .from("caritas_convites_assinatura")
+    .select("id, convenio_id")
+    .eq("id", conviteId)
+    .maybeSingle();
+
+  if (!convite) throw new Error("Link não encontrado.");
+  if (!(await podeGerirConvenio(sessao.sub, convite.convenio_id, sessao.email))) {
+    throw new Error("Você não tem permissão para cancelar links deste convênio.");
+  }
+
   const { error } = await supabase
     .from("caritas_convites_assinatura")
     .update({ cancelado: true })
@@ -109,6 +126,10 @@ export async function regerarConvite(prestacaoId: string, papel: PapelAssinatura
 
   const c = await consolidarPrestacao(prestacaoId);
   if (!c) throw new Error("Prestação não encontrada.");
+
+  if (!(await podeGerirConvenio(sessao.sub, c.convenio.id, sessao.email))) {
+    throw new Error("Você não tem permissão para gerar links neste convênio.");
+  }
 
   const hash = calcularHashPrestacao(c);
   const assinaturas = await listarAssinaturas("prestacao", prestacaoId);

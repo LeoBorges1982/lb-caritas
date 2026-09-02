@@ -41,6 +41,19 @@ export interface ConvenioDetalhe {
   conta_aplicacao: string | null;
   gestor_publico: string | null;
   gestor_osc: string | null;
+  // Signatarios da prestacao de contas (usados no bloco de assinaturas)
+  gestor_osc_cpf: string | null;
+  responsavel_legal_nome: string | null;
+  responsavel_legal_cpf: string | null;
+  elaborador_nome: string | null;
+  elaborador_cpf: string | null;
+  contabilista_nome: string | null;
+  contabilista_cpf: string | null;
+  contabilista_crc: string | null;
+  responsavel_tecnico_nome: string | null;
+  responsavel_tecnico_cpf: string | null;
+  responsavel_tecnico_email: string | null;
+  responsavel_tecnico_funcao: string | null;
   observacoes: string | null;
   osc: {
     id: string;
@@ -188,6 +201,15 @@ export async function buscarConvenio(id: string): Promise<ConvenioDetalhe | null
   const pick = <T,>(v: T | T[] | null): T | null =>
     Array.isArray(v) ? (v[0] ?? null) : v;
 
+  // Le um campo texto do row bruto. Os campos de signatario nao estao no
+  // tipo ConvRow, mas vem no select("*") — sem isto a tela de Responsaveis
+  // renderiza tudo vazio e o proximo "Salvar" apaga os dados no banco.
+  const bruto = conv as unknown as Record<string, unknown>;
+  const txt = (_: unknown, campo: string): string | null => {
+    const v = bruto[campo];
+    return typeof v === "string" && v.length > 0 ? v : null;
+  };
+
   const osc = pick(c.osc) as ConvenioDetalhe["osc"];
   const orgao = pick(c.orgao) as ConvenioDetalhe["orgao"];
 
@@ -214,6 +236,18 @@ export async function buscarConvenio(id: string): Promise<ConvenioDetalhe | null
     conta_aplicacao: c.conta_aplicacao,
     gestor_publico: c.gestor_publico,
     gestor_osc: c.gestor_osc,
+    gestor_osc_cpf: txt(c, "gestor_osc_cpf"),
+    responsavel_legal_nome: txt(c, "responsavel_legal_nome"),
+    responsavel_legal_cpf: txt(c, "responsavel_legal_cpf"),
+    elaborador_nome: txt(c, "elaborador_nome"),
+    elaborador_cpf: txt(c, "elaborador_cpf"),
+    contabilista_nome: txt(c, "contabilista_nome"),
+    contabilista_cpf: txt(c, "contabilista_cpf"),
+    contabilista_crc: txt(c, "contabilista_crc"),
+    responsavel_tecnico_nome: txt(c, "responsavel_tecnico_nome"),
+    responsavel_tecnico_cpf: txt(c, "responsavel_tecnico_cpf"),
+    responsavel_tecnico_email: txt(c, "responsavel_tecnico_email"),
+    responsavel_tecnico_funcao: txt(c, "responsavel_tecnico_funcao"),
     observacoes: c.observacoes,
     osc,
     orgao,

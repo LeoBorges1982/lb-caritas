@@ -98,3 +98,63 @@ export async function listarUsuariosDoPortal(): Promise<{ id: string; nome: stri
     })
     .sort((a, b) => (a.nome ?? a.email ?? "").localeCompare(b.nome ?? b.email ?? ""));
 }
+
+/**
+ * Admin do sistema: passa em qualquer convênio.
+ *
+ * Duas fontes, para que ninguém se tranque para fora: o papel 'admin' na
+ * tabela `perfis` do Portal LB e, como paraquedas, a variável de ambiente
+ * CARITAS_ADMIN_EMAILS (lista separada por vírgula).
+ */
+export async function ehAdmin(usuarioId: string, email?: string | null): Promise<boolean> {
+  const lista = (process.env.CARITAS_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (email && lista.includes(email.toLowerCase())) return true;
+
+  const supabase = adminClient();
+  const { data, error } = await supabase
+    .from("perfis")
+    .select("papel")
+    .eq("id", usuarioId)
+    .maybeSingle();
+
+  if (error) return false;
+  return data?.papel === "admin";
+}
+
+/**
+ * Papel do usuário num convênio — null quando ele não tem acesso algum.
+ *
+ * As server actions usam o cliente service_role, que ignora RLS. Sem uma
+ * checagem explícita como esta, a política do banco não protege nada.
+ */
+export async function papelNoConvenio(
+  usuarioId: string,
+  convenioId: string | null
+): Promise<PapelAcesso | null> {
+  if (!convenioId) return null;
+
+  const supabase = adminClient();
+  const { data, error } = await supabase
+    .from("caritas_usuarios_acesso")
+    .select("papel")
+    .eq("usuario_id", usuarioId)
+    .eq("convenio_id", convenioId)
+    .maybeSingle();
+
+  if (error) return null;
+  return (data?.papel as PapelAcesso | undefined) ?? null;
+}
+
+/** Só gestor (ou admin) mexe em prestação de contas e assinatura. */
+export async function podeGerirConvenio(
+  usuarioId: string,
+  convenioId: string | null,
+  email?: string | null
+): Promise<boolean> {
+  if (await ehAdmin(usuarioId, email)) return true;
+  return (await papelNoConvenio(usuarioId, convenioId)) === "gestor";
+}

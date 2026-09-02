@@ -38,3 +38,14 @@ export function formatCPF(cpf: string): string {
   if (d.length !== 11) return cpf;
   return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
 }
+
+/**
+ * CPF parcialmente mascarado, para exibição pública: ***.456.789-**
+ * Permite conferir a identidade de quem assinou sem publicar o documento
+ * completo na internet (LGPD art. 6º, III — minimização).
+ */
+export function mascararCPF(cpf: string): string {
+  const d = cpf.replace(/\D/g, "");
+  if (d.length !== 11) return "***";
+  return `***.${d.slice(3, 6)}.${d.slice(6, 9)}-**`;
+}

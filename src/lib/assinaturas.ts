@@ -57,6 +57,8 @@ export interface SignatarioStatus {
   cpf: string | null;
   registro: string | null;
   assinatura: Assinatura | null;
+  /** true quando o responsável do convênio mudou depois da assinatura */
+  substituido?: boolean;
   /** true quando assinou, mas o conteúdo mudou depois */
   divergente: boolean;
 }
@@ -173,14 +175,27 @@ export function montarStatusSignatarios(
 
   return PAPEIS_ORDEM.map((papel) => {
     const a = assinaturas.find((x) => x.papel === papel) ?? null;
+
+    // Quem JA assinou: valem os dados congelados na propria assinatura.
+    // Usar o cadastro vivo do convenio permitiria reescrever a autoria
+    // depois do fato — trocar o responsavel na tela faria o carimbo
+    // atribuir a assinatura a outra pessoa, sem mudar o hash.
+    const dados = a
+      ? { nome: a.nome, cpf: a.cpf, registro: a.registro_profissional }
+      : previstos[papel];
+
     return {
       papel,
       rotulo: PAPEL_ASSINATURA_LABEL[papel],
-      nome: previstos[papel].nome,
-      cpf: previstos[papel].cpf,
-      registro: previstos[papel].registro,
+      nome: dados.nome,
+      cpf: dados.cpf,
+      registro: dados.registro,
       assinatura: a,
       divergente: !!a && a.hash_documento !== hashAtual,
+      // Assinou, mas o responsavel do convenio mudou depois: nao invalida
+      // a assinatura (ela vale para quem a fez), mas precisa ser sinalizado.
+      substituido:
+        !!a && !!previstos[papel].nome && previstos[papel].nome !== a.nome,
     };
   });
 }

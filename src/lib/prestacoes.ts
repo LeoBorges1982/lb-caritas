@@ -312,7 +312,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
   let saldo_periodo_anterior = 0;
   for (const l of antesRes.data ?? []) {
     const v = Number(l.valor);
-    if (l.tipo === "repasse" || l.tipo === "rendimento" || l.tipo === "saldo_abertura") saldo_periodo_anterior += v;
+    if (l.tipo === "repasse" || l.tipo === "rendimento" || l.tipo === "saldo_anterior") saldo_periodo_anterior += v;
     else if (l.tipo === "despesa" && l.status !== "glosado") saldo_periodo_anterior -= v;
     else if (l.tipo === "devolucao") saldo_periodo_anterior -= v;
   }
@@ -344,7 +344,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
     const v = Number(l.valor);
     if (l.tipo === "repasse") repasses += v;
     else if (l.tipo === "rendimento") rendimentos += v;
-    else if (l.tipo === "saldo_abertura") saldo_abertura_periodo += v;
+    else if (l.tipo === "saldo_anterior") saldo_abertura_periodo += v;
     // Contrapartida OSC: quando valor_pago_total > valor (cobertura parcial pelo convênio)
     else if (l.tipo === "despesa" && l.status !== "glosado" && l.valor_pago_total !== null) {
       const vTotal = Number(l.valor_pago_total);
@@ -352,7 +352,7 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
       if (diff > 0) recursos_osc += diff;
     }
   }
-  // Se houver saldo_abertura no período, soma ao "saldo do período anterior"
+  // Saldo do exercício anterior lançado dentro do período soma ao item (E)
   const receita_E = saldo_periodo_anterior + saldo_abertura_periodo;
 
   const receita: ReceitaSEMAS = {
@@ -389,17 +389,36 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
     return { total, linhas };
   }
 
-  const rh = despesasPorCodigo("1.", ["1.1", "1.2", "1.3", "1.4", "1.5"]);
-  const materiais = despesasPorCodigo("2.", ["2.1", "2.2", "2.3", "2.4"]);
-  const servicos = despesasPorCodigo("3.", ["3.1", "3.2"]);
-  const locacao = despesasPorCodigo("4.", ["4.1", "4.2"]);
+  const CODIGOS_RH = ["1.1", "1.2", "1.3", "1.4", "1.5"];
+  const CODIGOS_MATERIAIS = ["2.1", "2.2", "2.3", "2.4"];
+  const CODIGOS_SERVICOS = ["3.1", "3.2"];
+  const CODIGOS_LOCACAO = ["4.1", "4.2"];
+
+  const rh = despesasPorCodigo("1.", CODIGOS_RH);
+  const materiais = despesasPorCodigo("2.", CODIGOS_MATERIAIS);
+  const servicos = despesasPorCodigo("3.", CODIGOS_SERVICOS);
+  const locacao = despesasPorCodigo("4.", CODIGOS_LOCACAO);
+
+  // Categorias já contabilizadas nos itens (1) a (4). Toda despesa fora
+  // delas cai em "Outras" — inclusive rubricas como a 5.0, que existe no
+  // cadastro e aparece no formulário. Sem isso a despesa sumiria do total
+  // e inflaria o saldo declarado para o próximo período.
+  const codigosCobertos = new Set([
+    ...CODIGOS_RH, ...CODIGOS_MATERIAIS, ...CODIGOS_SERVICOS, ...CODIGOS_LOCACAO,
+  ]);
+  const idsCobertos = new Set(
+    (categoriasRes.data ?? [])
+      .filter((c) => codigosCobertos.has(c.codigo))
+      .map((c) => c.id)
+  );
 
   let outras = 0, devolvido = 0;
   for (const l of lancs) {
     if (l.tipo === "devolucao") devolvido += Number(l.valor);
-    if (l.tipo === "despesa" && !l.categoria_id && l.status !== "glosado") {
-      outras += Number(l.valor);
-    }
+    if (l.tipo !== "despesa") continue;
+    if (l.status === "glosado" || l.status === "cancelado") continue;
+    if (l.categoria_id && idsCobertos.has(l.categoria_id)) continue;
+    outras += Number(l.valor);
   }
 
   const total_despesas_periodo = rh.total + materiais.total + servicos.total + locacao.total + outras + devolvido;
@@ -459,8 +478,15 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
     materiais: linhasPagamento("2."),
     servicos: linhasPagamento("3."),
     locacao: linhasPagamento("4."),
+    // Espelha o total do item (5): tudo que não entrou nos grupos 1 a 4
     outras: lancs
-      .filter((l) => l.tipo === "despesa" && !l.categoria_id && l.status !== "glosado")
+      .filter(
+        (l) =>
+          l.tipo === "despesa" &&
+          l.status !== "glosado" &&
+          l.status !== "cancelado" &&
+          !(l.categoria_id && idsCobertos.has(l.categoria_id))
+      )
       .map((l) => ({
         data: l.data_lancamento,
         credor: l.fornecedor_nome ?? "—",

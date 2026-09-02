@@ -60,7 +60,7 @@ export default function CarimboAssinaturas({ signatarios, hashAtual, urlVerifica
           {assinados.map((s) => (
             <li key={s.papel}>
               <span className="papel">{s.rotulo}:</span>{" "}
-              {s.nome}
+              {s.nome || s.assinatura!.nome || "—"}
               {s.cpf ? ` — CPF ${formatCPF(s.cpf)}` : ""}
               {s.registro ? ` — ${s.registro}` : ""}
               {" — "}
@@ -70,8 +70,9 @@ export default function CarimboAssinaturas({ signatarios, hashAtual, urlVerifica
         </ul>
         <div className="hash">Código de integridade (SHA-256): {hashLegivel(hashAtual, 16)}</div>
         <div className="legal">
-          Assinatura eletrônica avançada (Lei 14.063/2020, art. 4º, II). Autoria comprovada por acesso
-          autenticado ao sistema; integridade comprovada por resumo criptográfico do conteúdo.
+          Assinatura eletrônica avançada (Lei 14.063/2020, art. 4º, II). Autoria comprovada por link
+          individual e confirmação de CPF do signatário; integridade comprovada por resumo
+          criptográfico do conteúdo.
           Confira a autenticidade em: {urlVerificacao}
         </div>
       </div>

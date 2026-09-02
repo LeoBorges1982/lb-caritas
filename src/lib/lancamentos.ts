@@ -4,7 +4,7 @@ import { adminClient } from "@/lib/supabase/admin";
 // Tipos
 // ============================================================================
 
-export type TipoLancamento = "repasse" | "rendimento" | "devolucao" | "despesa" | "estorno" | "saldo_abertura";
+export type TipoLancamento = "repasse" | "rendimento" | "devolucao" | "despesa" | "estorno" | "saldo_anterior";
 export type StatusLancamento = "previsto" | "realizado" | "conciliado" | "glosado" | "cancelado";
 export type FormaPagamento = "pix" | "ted" | "doc" | "cheque" | "debito" | "dinheiro";
 export type DocumentoTipo = "nf" | "nfse" | "recibo" | "rpa" | "folha" | "outros";
@@ -62,7 +62,7 @@ export const TIPO_LABEL: Record<TipoLancamento, string> = {
   devolucao: "Devolução",
   despesa: "Despesa",
   estorno: "Estorno",
-  saldo_abertura: "Saldo de Abertura",
+  saldo_anterior: "Saldo do Exercício Anterior",
 };
 
 export const TIPO_CORES: Record<TipoLancamento, string> = {
@@ -71,7 +71,7 @@ export const TIPO_CORES: Record<TipoLancamento, string> = {
   devolucao: "bg-amber-100 text-amber-700 border-amber-200",
   despesa: "bg-slate-100 text-slate-700 border-slate-200",
   estorno: "bg-orange-100 text-orange-700 border-orange-200",
-  saldo_abertura: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  saldo_anterior: "bg-indigo-100 text-indigo-700 border-indigo-200",
 };
 
 export const TIPO_SINAL: Record<TipoLancamento, "+" | "-" | "·"> = {
@@ -80,7 +80,7 @@ export const TIPO_SINAL: Record<TipoLancamento, "+" | "-" | "·"> = {
   devolucao: "-",
   despesa: "-",
   estorno: "·",
-  saldo_abertura: "+",
+  saldo_anterior: "+",
 };
 
 export const STATUS_LABEL: Record<StatusLancamento, string> = {
