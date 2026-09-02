@@ -12,6 +12,9 @@ export interface Rubrica {
   valor_saldo: number;
   percentual_executado: number;
   qtd_lancamentos: number;
+  tipo_acumulo: "corrente" | "provisionamento";
+  valor_mensal_previsto: number;
+  meses_cronograma: number;
 }
 
 export interface RubricasAgrupadas {
@@ -36,7 +39,7 @@ export async function listarRubricas(convenioId: string): Promise<RubricasResumo
   const [catRes, lancRes] = await Promise.all([
     supabase
       .from("caritas_categorias_despesa")
-      .select("id, codigo, nome, grupo, ordem, ativo, valor_previsto")
+      .select("id, codigo, nome, grupo, ordem, ativo, valor_previsto, tipo_acumulo, valor_mensal_previsto, meses_cronograma")
       .eq("convenio_id", convenioId)
       .order("ordem"),
     supabase
@@ -78,6 +81,9 @@ export async function listarRubricas(convenioId: string): Promise<RubricasResumo
       valor_saldo: saldo,
       percentual_executado: pct,
       qtd_lancamentos: r.qtd,
+      tipo_acumulo: (c.tipo_acumulo as "corrente" | "provisionamento") ?? "corrente",
+      valor_mensal_previsto: Number(c.valor_mensal_previsto ?? 0),
+      meses_cronograma: Number(c.meses_cronograma ?? 12),
     };
   });
 

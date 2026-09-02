@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, ExternalLink } from "lucide-react";
 import {
   consolidarPrestacao,
   STATUS_PRESTACAO_LABEL,
@@ -12,6 +12,8 @@ import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
 import BotaoImprimir from "@/components/BotaoImprimir";
 import AcoesPrestacao from "@/components/AcoesPrestacao";
 import AnexosBloco from "@/components/AnexosBloco";
+import BotaoExcluirPrestacao from "@/components/BotaoExcluirPrestacao";
+import EditarPeriodoPrestacao from "@/components/EditarPeriodoPrestacao";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +36,18 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
         <Link href="/prestacoes" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#1e3a8a]">
           <ArrowLeft size={14} /> Voltar
         </Link>
-        <BotaoImprimir />
+        <div className="flex items-center gap-2">
+          <a
+            href={`/imprimir/prestacao/${c.prestacao.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gradient-to-r from-[#1e3a8a] to-[#1e40af] hover:opacity-90 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2"
+          >
+            <FileText size={14} /> Versão oficial (PDF limpo) <ExternalLink size={12} />
+          </a>
+          <BotaoImprimir />
+          <BotaoExcluirPrestacao id={c.prestacao.id} label={c.convenio.numero} />
+        </div>
       </div>
 
       {/* Ações (não imprime) */}
@@ -80,7 +93,14 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
         </div>
         <div className="grid grid-cols-[140px_1fr] border-b border-slate-400 print:border-black">
           <div className="p-2 border-r border-slate-400 print:border-black text-[9pt]">Período</div>
-          <div className="p-2 font-semibold">{formatDate(c.prestacao.periodo_inicio)} à {formatDate(c.prestacao.periodo_fim)}</div>
+          <div className="p-2 font-semibold">
+            {formatDate(c.prestacao.periodo_inicio)} à {formatDate(c.prestacao.periodo_fim)}
+            <EditarPeriodoPrestacao
+              id={c.prestacao.id}
+              periodoInicio={c.prestacao.periodo_inicio}
+              periodoFim={c.prestacao.periodo_fim}
+            />
+          </div>
         </div>
       </div>
 

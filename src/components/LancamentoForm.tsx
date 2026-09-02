@@ -145,7 +145,7 @@ export default function LancamentoForm({ modo, opcoes, inicial, action, vedacoes
       {/* Bloco 2 — Valor e datas */}
       <Section titulo="Valor e datas">
         <Grid>
-          <Field label="Valor (R$)" obrigatorio>
+          <Field label="Valor que o convênio cobre (R$)" obrigatorio hint="Limite que pode ser lançado no convênio (respeita teto da rubrica)">
             <input
               name="valor"
               type="text"
@@ -153,6 +153,20 @@ export default function LancamentoForm({ modo, opcoes, inicial, action, vedacoes
               required
               placeholder="0,00"
               defaultValue={inicial ? inicial.valor.toString().replace(".", ",") : ""}
+              className={inputCn}
+            />
+          </Field>
+
+          <Field label="Valor real pago pela OSC (R$)" hint="Se for maior que o coberto, a diferença vira contrapartida OSC. Deixe vazio se for igual.">
+            <input
+              name="valor_pago_total"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00 (opcional)"
+              defaultValue={(() => {
+                const vpt = (inicial as unknown as { valor_pago_total?: number | null } | null)?.valor_pago_total;
+                return vpt != null ? String(vpt).replace(".", ",") : "";
+              })()}
               className={inputCn}
             />
           </Field>

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessao } from "@/lib/sessao";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import AjudaChat from "@/components/AjudaChat";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Header email={sessao.email} nome={sessao.nome} />
         <main className="p-6">{children}</main>
       </div>
+      <AjudaChat />
     </div>
   );
 }

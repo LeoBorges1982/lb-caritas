@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileSignature, Receipt, BookOpenCheck,
-  Bell, Wallet, BarChart3, ExternalLink, FileText,
+  Bell, Wallet, BarChart3, ExternalLink, FileText, HandHeart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,15 +23,18 @@ export default function Sidebar() {
   const path = usePathname();
 
   return (
-    <aside className="hidden lg:flex w-60 bg-[#1e3a8a] text-white flex-col fixed inset-y-0 left-0 z-30">
+    <aside className="hidden lg:flex w-60 bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white flex-col fixed inset-y-0 left-0 z-30">
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-md p-1.5">
-            <img src="/logo-lb.png" alt="LB" className="h-7 w-auto" />
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 bg-amber-400 rounded-full blur-md opacity-40"></div>
+            <div className="relative bg-gradient-to-br from-amber-300 to-amber-500 rounded-full p-2 shadow-lg ring-2 ring-white/20">
+              <HandHeart size={20} className="text-[#1e3a8a]" strokeWidth={2.5} />
+            </div>
           </div>
-          <div>
-            <div className="font-semibold text-sm leading-tight">LB Caritas</div>
-            <div className="text-[10px] text-blue-200 leading-tight">Convênios Públicos · Lei 13.019/14</div>
+          <div className="leading-tight">
+            <div className="font-bold text-base tracking-tight">LB Cáritas</div>
+            <div className="text-[10px] text-blue-200/90">Convênios · Lei 13.019/14</div>
           </div>
         </div>
       </div>
