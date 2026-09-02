@@ -1,7 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { consolidarPrestacao } from "@/lib/prestacoes";
 import { getSessao } from "@/lib/sessao";
+import {
+  listarAssinaturas,
+  calcularHashPrestacao,
+  montarStatusSignatarios,
+} from "@/lib/assinaturas";
+import { gerarQrDataUrl, urlVerificacao } from "@/lib/qr";
 import PrestacaoOficial from "@/components/PrestacaoOficial";
+import CarimboAssinaturas from "@/components/CarimboAssinaturas";
 import ImprimirToolbar from "./ImprimirToolbar";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +23,28 @@ export default async function ImprimirPrestacaoPage({ params }: PageProps) {
   const c = await consolidarPrestacao(id);
   if (!c) notFound();
 
+  // Carimbo de assinatura eletrônica (só aparece se houver assinatura válida)
+  const assinaturas = await listarAssinaturas("prestacao", id);
+  const hashAtual = calcularHashPrestacao(c);
+  const signatarios = montarStatusSignatarios(c, assinaturas, hashAtual);
+  const url = urlVerificacao(id);
+  const qr = assinaturas.length > 0 ? await gerarQrDataUrl(url) : null;
+
   return (
     <>
       <ImprimirToolbar nomeArquivo={`Prestacao_${c.convenio.numero?.replace(/\//g, "_")}_${c.prestacao.periodo_inicio}_a_${c.prestacao.periodo_fim}`} />
       <div className="standalone-pdf">
-        <PrestacaoOficial c={c} />
+        <PrestacaoOficial
+          c={c}
+          carimbo={
+            <CarimboAssinaturas
+              signatarios={signatarios}
+              hashAtual={hashAtual}
+              urlVerificacao={url}
+              qrDataUrl={qr}
+            />
+          }
+        />
       </div>
       <style>{`
         html, body { background: #f1f5f9; margin: 0; padding: 0; }

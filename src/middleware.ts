@@ -5,9 +5,12 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   // Públicos: SSO entry, assets, webhooks, cron jobs (autenticados via header)
+  // e a verificação de autenticidade de documentos (acessada pelo QR code por
+  // quem recebe a prestação — a prefeitura não tem login no sistema).
   if (
     path === "/auth-via-portal" ||
     path === "/login" ||
+    path.startsWith("/verificar/") ||
     path.startsWith("/api/webhooks/") ||
     path.startsWith("/api/cron/") ||
     path.startsWith("/_next") ||

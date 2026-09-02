@@ -14,6 +14,14 @@ import AcoesPrestacao from "@/components/AcoesPrestacao";
 import AnexosBloco from "@/components/AnexosBloco";
 import BotaoExcluirPrestacao from "@/components/BotaoExcluirPrestacao";
 import EditarPeriodoPrestacao from "@/components/EditarPeriodoPrestacao";
+import PainelAssinaturas from "@/components/PainelAssinaturas";
+import {
+  listarAssinaturas,
+  calcularHashPrestacao,
+  montarStatusSignatarios,
+  resumirAssinaturas,
+} from "@/lib/assinaturas";
+import { urlVerificacao } from "@/lib/qr";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +36,12 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
 
   const anexos = await listarAnexos("prestacao", id);
   const ehFinal = c.prestacao.tipo === "final";
+
+  // Assinatura eletrônica
+  const assinaturas = await listarAssinaturas("prestacao", id);
+  const hashAtual = calcularHashPrestacao(c);
+  const signatarios = montarStatusSignatarios(c, assinaturas, hashAtual);
+  const resumoAssinaturas = resumirAssinaturas(signatarios);
 
   return (
     <div className="balancete max-w-6xl mx-auto space-y-4 text-[10pt]">
@@ -65,6 +79,15 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
         </div>
         <AcoesPrestacao id={c.prestacao.id} status={c.prestacao.status} />
       </div>
+
+      {/* Assinatura eletrônica (não imprime) */}
+      <PainelAssinaturas
+        prestacaoId={c.prestacao.id}
+        hashAtual={hashAtual}
+        signatarios={signatarios}
+        resumo={resumoAssinaturas}
+        urlVerificacao={urlVerificacao(c.prestacao.id)}
+      />
 
       {/* ============================================================ */}
       {/* CABEÇALHO OFICIAL */}

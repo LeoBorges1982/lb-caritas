@@ -6,7 +6,14 @@ import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
  * Layout A4 retrato, P&B, tipografia serifada, sem cores.
  * Usado na tela interna e na rota /imprimir standalone.
  */
-export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
+export default function PrestacaoOficial({
+  c,
+  carimbo,
+}: {
+  c: PrestacaoConsolidada;
+  /** Carimbo de assinatura eletrônica, renderizado antes do rodapé. */
+  carimbo?: React.ReactNode;
+}) {
   const ehFinal = c.prestacao.tipo === "final";
 
   return (
@@ -492,6 +499,8 @@ export default function PrestacaoOficial({ c }: { c: PrestacaoConsolidada }) {
           crc={c.convenio.contabilista_crc}
         />
       </div>
+
+      {carimbo}
 
       <div className="footer-doc">
         Nova Iguaçu/RJ — Prestação de Contas elaborada conforme Lei Federal 13.019/2014 (art. 63) e Decreto Municipal 11.252/2018

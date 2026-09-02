@@ -20,3 +20,7 @@ yarn-error.log*
 
 next-env.d.ts
 .vercel
+
+# TypeScript incremental build
+*.tsbuildinfo
+tsconfig.tsbuildinfo
