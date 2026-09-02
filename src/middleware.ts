@@ -11,6 +11,7 @@ export async function middleware(req: NextRequest) {
     path === "/auth-via-portal" ||
     path === "/login" ||
     path.startsWith("/verificar/") ||
+    path.startsWith("/assinar/") ||
     path.startsWith("/api/webhooks/") ||
     path.startsWith("/api/cron/") ||
     path.startsWith("/_next") ||

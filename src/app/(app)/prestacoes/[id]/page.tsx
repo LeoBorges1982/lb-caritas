@@ -22,6 +22,7 @@ import {
   resumirAssinaturas,
 } from "@/lib/assinaturas";
 import { urlVerificacao } from "@/lib/qr";
+import { listarConvites, urlAssinatura } from "@/lib/convites";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,17 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
   const hashAtual = calcularHashPrestacao(c);
   const signatarios = montarStatusSignatarios(c, assinaturas, hashAtual);
   const resumoAssinaturas = resumirAssinaturas(signatarios);
+
+  // Links de assinatura ainda pendentes (um por responsável)
+  const convites = (await listarConvites("prestacao", id))
+    .filter((cv) => !cv.usado_em && cv.hash_documento === hashAtual)
+    .map((cv) => ({
+      id: cv.id,
+      papel: cv.papel,
+      url: urlAssinatura(cv.token),
+      expira_em: cv.expira_em,
+      criado_em: cv.criado_em,
+    }));
 
   return (
     <div className="balancete max-w-6xl mx-auto space-y-4 text-[10pt]">
@@ -87,6 +99,7 @@ export default async function PrestacaoDetalhePage({ params }: PageProps) {
         signatarios={signatarios}
         resumo={resumoAssinaturas}
         urlVerificacao={urlVerificacao(c.prestacao.id)}
+        convites={convites}
       />
 
       {/* ============================================================ */}
