@@ -309,10 +309,25 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
     Array.isArray(v) ? (v[0] ?? null) : v;
 
   // ====== Saldo do período anterior ======
+  //
+  // O saldo vem da MOVIMENTAÇÃO real registrada (entradas menos saídas), que
+  // é o que confere com o extrato bancário.
+  //
+  // Lançamentos do tipo "saldo_anterior" NÃO entram aqui de propósito: eles
+  // registram, de forma agregada, um saldo que a própria movimentação já
+  // representa. Somá-los duplicaria o valor — foi o que aconteceu na
+  // prestação de agosto/2026, que saltou de R$ 20.125,06 para R$ 40.013,37
+  // por causa de um lançamento agregado de R$ 19.888,31.
+  //
+  // Se um dia o sistema precisar abrir um convênio SEM a movimentação
+  // anterior (só com o saldo de partida), este é o ponto a revisitar — e aí
+  // um dos dois lados tem que sair, nunca os dois somados.
   let saldo_periodo_anterior = 0;
+  let saldo_anterior_agregado = 0;
   for (const l of antesRes.data ?? []) {
     const v = Number(l.valor);
-    if (l.tipo === "repasse" || l.tipo === "rendimento" || l.tipo === "saldo_anterior") saldo_periodo_anterior += v;
+    if (l.tipo === "saldo_anterior") saldo_anterior_agregado += v;
+    else if (l.tipo === "repasse" || l.tipo === "rendimento") saldo_periodo_anterior += v;
     else if (l.tipo === "despesa" && l.status !== "glosado") saldo_periodo_anterior -= v;
     else if (l.tipo === "devolucao") saldo_periodo_anterior -= v;
   }
@@ -339,12 +354,10 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
   let repasses = 0, rendimentos = 0;
   const outras_rec = 0;
   let recursos_osc = 0;
-  let saldo_abertura_periodo = 0;
   for (const l of lancs) {
     const v = Number(l.valor);
     if (l.tipo === "repasse") repasses += v;
     else if (l.tipo === "rendimento") rendimentos += v;
-    else if (l.tipo === "saldo_anterior") saldo_abertura_periodo += v;
     // Contrapartida OSC: quando valor_pago_total > valor (cobertura parcial pelo convênio)
     else if (l.tipo === "despesa" && l.status !== "glosado" && l.valor_pago_total !== null) {
       const vTotal = Number(l.valor_pago_total);
@@ -352,8 +365,20 @@ export async function consolidarPrestacao(id: string): Promise<PrestacaoConsolid
       if (diff > 0) recursos_osc += diff;
     }
   }
-  // Saldo do exercício anterior lançado dentro do período soma ao item (E)
-  const receita_E = saldo_periodo_anterior + saldo_abertura_periodo;
+  // Item (E) do demonstrativo: o saldo apurado pela movimentação.
+  const receita_E = saldo_periodo_anterior;
+
+  if (saldo_anterior_agregado !== 0) {
+    // Não é erro fatal, mas alguém precisa olhar: há um saldo agregado
+    // convivendo com a movimentação que já o representa.
+    console.warn(
+      `[prestacao ${id}] Ignorado lançamento agregado de saldo anterior ` +
+        `(R$ ${saldo_anterior_agregado.toFixed(2)}): o item (E) usa a ` +
+        `movimentação registrada, que já contempla esse valor. ` +
+        `Se o convênio foi aberto SEM a movimentação anterior, revise ` +
+        `consolidarPrestacao em src/lib/prestacoes.ts.`
+    );
+  }
 
   const receita: ReceitaSEMAS = {
     repasses_municipais: repasses,
