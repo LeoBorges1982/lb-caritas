@@ -105,10 +105,11 @@ function assin(papel: string, nome: string, cpf: string, quando: string, crc?: s
   };
 }
 
-// Cenário: três assinaram pelo link, o responsável legal ainda não
+// Cenário: os quatro responsáveis assinaram pelo link
 const assinaturas = [
   assin("gestor_osc", "Padre Célio Barbosa do Nascimento", "085.738.797-93", "2026-09-02T23:49:00-03:00"),
   assin("elaborador", "GISELLE LUIS DA SILVA", "115.807.227-92", "2026-09-03T09:14:00-03:00"),
+  assin("responsavel_legal", "Padre José Vilanova Santos", "132.314.017-47", "2026-09-03T09:37:00-03:00"),
   assin("contabilista", "JOSIANE TOMEN", "079.400.777-09", "2026-09-03T10:02:00-03:00", "CRC/RJ 112875/O-2"),
 ];
 
@@ -141,8 +142,8 @@ const pagina = `<!doctype html>
   @media print { body { background:#fff } .folha { box-shadow:none; margin:0; width:auto } .aviso { display:none } }
 </style></head><body>
 <div class="aviso"><strong>Pré-visualização com dados fictícios.</strong>
-Três responsáveis assinaram pelo link; o Responsável Legal ainda não —
-repare que a linha dele continua em branco para assinatura à mão.</div>
+Os quatro responsáveis assinaram pelo link — cada um com o nome grafado
+sobre a linha, o CPF e a data e hora reais do ato.</div>
 <div class="folha">${html}</div>
 </body></html>`;
 
