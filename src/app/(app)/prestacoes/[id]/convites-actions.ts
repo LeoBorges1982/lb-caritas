@@ -48,7 +48,25 @@ export async function gerarConvites(prestacaoId: string) {
     );
   }
 
-  const semCpf = pendentes.filter((s) => !s.cpf);
+  // Quem já tem link em pé para ESTE conteúdo não é mexido: o link pode já
+  // estar no WhatsApp da pessoa, e recriá-lo invalidaria o que ela recebeu.
+  const convitesAtivos = await listarConvites("prestacao", prestacaoId);
+  const jaTemLinkValido = new Set(
+    convitesAtivos
+      .filter((cv) => !cv.usado_em && cv.hash_documento === hash)
+      .map((cv) => cv.papel)
+  );
+
+  const alvos = pendentes.filter((s) => !jaTemLinkValido.has(s.papel));
+
+  if (!alvos.length) {
+    throw new Error(
+      "Todos os responsáveis que faltam já têm link válido. Para trocar o link " +
+        "de alguém, use o botão “Gerar link” na linha dele."
+    );
+  }
+
+  const semCpf = alvos.filter((s) => !s.cpf);
   if (semCpf.length) {
     throw new Error(
       `Sem CPF cadastrado para: ${semCpf.map((s) => s.nome).join(", ")}. ` +
@@ -58,12 +76,13 @@ export async function gerarConvites(prestacaoId: string) {
 
   const supabase = adminClient();
 
-  // Cancela links ativos anteriores destes papéis (apontam para outro hash)
+  // Cancela apenas os links desatualizados dos papéis que vamos regerar
   const { error: erroCancelar } = await supabase
     .from("caritas_convites_assinatura")
     .update({ cancelado: true })
     .eq("entidade", "prestacao")
     .eq("entidade_id", prestacaoId)
+    .in("papel", alvos.map((s) => s.papel))
     .is("usado_em", null)
     .eq("cancelado", false);
 
@@ -71,7 +90,7 @@ export async function gerarConvites(prestacaoId: string) {
     throw new Error(`Erro ao limpar links anteriores: ${erroCancelar.message}`);
   }
 
-  const novos = pendentes.map((s) => ({
+  const novos = alvos.map((s) => ({
     token: gerarToken(),
     convenio_id: c.convenio.id,
     entidade: "prestacao",
