@@ -4,6 +4,8 @@ import { consolidarPrestacao } from "@/lib/prestacoes";
 import {
   calcularHashPrestacao,
   hashLegivel,
+  listarAssinaturas,
+  montarStatusSignatarios,
   PAPEL_ASSINATURA_LABEL,
 } from "@/lib/assinaturas";
 import {
@@ -36,6 +38,11 @@ export default async function AssinarPage({ params }: PageProps) {
   if (!c) notFound();
 
   const hashAtual = calcularHashPrestacao(c);
+  const signatarios = montarStatusSignatarios(
+    c,
+    await listarAssinaturas("prestacao", convite.entidade_id),
+    hashAtual
+  );
   const agora = new Date().toISOString();
   const invalido = motivoInvalido(convite, hashAtual, agora);
   const papelLabel = PAPEL_ASSINATURA_LABEL[convite.papel];
@@ -107,7 +114,7 @@ export default async function AssinarPage({ params }: PageProps) {
               </div>
               <div className="p-5 overflow-x-auto">
                 <div className="min-w-[640px]">
-                  <PrestacaoOficial c={c} />
+                  <PrestacaoOficial c={c} signatarios={signatarios} />
                 </div>
               </div>
             </div>

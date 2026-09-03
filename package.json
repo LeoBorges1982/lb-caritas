@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "testar": "tsx scripts/testar-assinatura.ts"
+    "testar": "npx --yes tsx scripts/testar-assinatura.ts",
+    "preview-assinatura": "npx --yes tsx --tsconfig scripts/tsconfig.json scripts/preview-assinatura.tsx"
   },
   "dependencies": {
     "next": "^15.1.0",

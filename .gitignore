@@ -24,3 +24,6 @@ next-env.d.ts
 # TypeScript incremental build
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# Preview local do documento
+preview-assinatura.html

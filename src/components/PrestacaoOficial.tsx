@@ -1,4 +1,5 @@
 import type { PrestacaoConsolidada } from "@/lib/prestacoes";
+import type { SignatarioStatus, PapelAssinatura } from "@/lib/assinaturas";
 import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
 
 /**
@@ -9,11 +10,18 @@ import { formatBRL, formatDate, formatCNPJ, formatCPF, cn } from "@/lib/utils";
 export default function PrestacaoOficial({
   c,
   carimbo,
+  signatarios,
 }: {
   c: PrestacaoConsolidada;
   /** Carimbo de assinatura eletrônica, renderizado antes do rodapé. */
   carimbo?: React.ReactNode;
+  /** Estado das assinaturas — quem assinou aparece grafado sobre a linha. */
+  signatarios?: SignatarioStatus[];
 }) {
+  const assinaturaDe = (papel: PapelAssinatura) => {
+    const s = signatarios?.find((x) => x.papel === papel);
+    return s?.assinatura && !s.divergente ? s : null;
+  };
   const ehFinal = c.prestacao.tipo === "final";
 
   return (
@@ -102,9 +110,21 @@ export default function PrestacaoOficial({
           font-size: 8.5pt; font-weight: 700; text-transform: uppercase;
           text-align: center; margin-bottom: 32px; letter-spacing: 0.04em;
         }
+        /* Quando ha assinatura eletronica, o titulo cede espaco para a grafia */
+        .prestacao-oficial .assinatura-titulo.com-grafia { margin-bottom: 4px; }
+        .prestacao-oficial .assinatura-grafia {
+          font-family: "Segoe Script", "Bradley Hand", "Brush Script MT",
+                       "Lucida Handwriting", cursive;
+          font-size: 15pt; text-align: center; line-height: 1.15;
+          padding-bottom: 2px; color: #111;
+        }
         .prestacao-oficial .assinatura-linha {
           border-top: 1px solid #000; padding-top: 3px;
           text-align: center; font-size: 8.5pt;
+        }
+        .prestacao-oficial .assinatura-selo {
+          font-size: 7pt; letter-spacing: 0.03em; margin-top: 2px;
+          text-transform: uppercase; color: #333;
         }
         .prestacao-oficial .footer-doc {
           margin-top: 24px; padding-top: 6px;
@@ -477,26 +497,30 @@ export default function PrestacaoOficial({
           titulo="Responsável da OSC (Gestor)"
           nome={c.convenio.gestor_osc}
           cpf={c.convenio.gestor_osc_cpf}
-          data={formatDate(c.prestacao.periodo_fim)}
+          dataPadrao={formatDate(c.prestacao.periodo_fim)}
+          assinado={assinaturaDe("gestor_osc")}
         />
         <BlocoAssinatura
           titulo="Responsável pela Elaboração"
           nome={c.convenio.elaborador_nome}
           cpf={c.convenio.elaborador_cpf}
-          data={formatDate(c.prestacao.periodo_fim)}
+          dataPadrao={formatDate(c.prestacao.periodo_fim)}
+          assinado={assinaturaDe("elaborador")}
         />
         <BlocoAssinatura
           titulo="Responsável Legal da OSC"
           nome={c.convenio.responsavel_legal_nome}
           cpf={c.convenio.responsavel_legal_cpf}
-          data={formatDate(c.prestacao.periodo_fim)}
+          dataPadrao={formatDate(c.prestacao.periodo_fim)}
+          assinado={assinaturaDe("responsavel_legal")}
         />
         <BlocoAssinatura
           titulo="Contabilista Responsável"
           nome={c.convenio.contabilista_nome}
           cpf={c.convenio.contabilista_cpf}
-          data={formatDate(c.prestacao.periodo_fim)}
+          dataPadrao={formatDate(c.prestacao.periodo_fim)}
           crc={c.convenio.contabilista_crc}
+          assinado={assinaturaDe("contabilista")}
         />
       </div>
 
@@ -578,19 +602,38 @@ function LinhaConcil({ label, valor }: { label: string; valor: number }) {
   );
 }
 
-function BlocoAssinatura({ titulo, nome, cpf, data, crc }: {
-  titulo: string; nome: string | null; cpf: string | null; data: string; crc?: string | null;
+function BlocoAssinatura({ titulo, nome, cpf, dataPadrao, crc, assinado }: {
+  titulo: string;
+  nome: string | null;
+  cpf: string | null;
+  /** Data usada quando ainda não há assinatura eletrônica (assina-se à mão). */
+  dataPadrao: string;
+  crc?: string | null;
+  assinado?: SignatarioStatus | null;
 }) {
+  // Assinou: valem os dados congelados na assinatura, e a data é a do ato —
+  // não a do fim do período, que datava o documento antes de ele ser assinado.
+  const nomeExibido = assinado?.nome ?? nome;
+  const cpfExibido = assinado?.cpf ?? cpf;
+  const crcExibido = assinado?.registro ?? crc;
+  const dataExibida = assinado?.assinatura
+    ? formatDate(assinado.assinatura.assinado_em, "dd/MM/yyyy 'às' HH:mm")
+    : dataPadrao;
+
   return (
     <div className="assinatura-bloco">
-      <div className="assinatura-titulo">{titulo}</div>
+      <div className={`assinatura-titulo${assinado ? " com-grafia" : ""}`}>{titulo}</div>
+      {assinado && <div className="assinatura-grafia">{nomeExibido}</div>}
       <div className="assinatura-linha">
-        <strong>{nome ?? "—"}</strong>
-        {crc && <span> · {crc}</span>}
+        <strong>{nomeExibido ?? "—"}</strong>
+        {crcExibido && <span> · {crcExibido}</span>}
         <br />
         <span style={{ fontSize: "8.5pt" }}>
-          CPF: {cpf ?? "—"} · Data: {data}
+          CPF: {cpfExibido ?? "—"} · Data: {dataExibida}
         </span>
+        {assinado && (
+          <div className="assinatura-selo">Assinado eletronicamente</div>
+        )}
       </div>
     </div>
   );

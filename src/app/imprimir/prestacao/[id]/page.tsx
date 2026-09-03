@@ -36,6 +36,7 @@ export default async function ImprimirPrestacaoPage({ params }: PageProps) {
       <div className="standalone-pdf">
         <PrestacaoOficial
           c={c}
+          signatarios={signatarios}
           carimbo={
             <CarimboAssinaturas
               signatarios={signatarios}
