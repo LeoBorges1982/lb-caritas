@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileSignature, Receipt, BookOpenCheck,
   Bell, Wallet, BarChart3, ExternalLink, FileText, HandHeart,
+  Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,11 +21,10 @@ const ITENS = [
   { href: "/relatorios", label: "Relatórios", icone: BarChart3 },
 ] as const;
 
-export default function Sidebar() {
-  const path = usePathname();
-
+/** Conteúdo interno do menu — compartilhado entre a sidebar fixa (desktop) e o drawer (mobile). */
+function MenuConteudo({ path, aoNavegar }: { path: string; aoNavegar?: () => void }) {
   return (
-    <aside className="hidden lg:flex w-60 bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white flex-col fixed inset-y-0 left-0 z-30">
+    <>
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
@@ -47,6 +48,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={aoNavegar}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
                 ativo
@@ -74,6 +76,66 @@ export default function Sidebar() {
           CRC-RJ 091024/O
         </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export default function Sidebar() {
+  const path = usePathname();
+  const [aberto, setAberto] = useState(false);
+
+  // Fecha o drawer ao navegar pra outra página
+  useEffect(() => { setAberto(false); }, [path]);
+
+  // Trava o scroll do body enquanto o drawer está aberto
+  useEffect(() => {
+    document.body.style.overflow = aberto ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [aberto]);
+
+  return (
+    <>
+      {/* ===== Desktop (≥ lg) — sidebar fixa ===== */}
+      <aside className="hidden lg:flex w-60 bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white flex-col fixed inset-y-0 left-0 z-30">
+        <MenuConteudo path={path} />
+      </aside>
+
+      {/* ===== Mobile (< lg) — botão hamburger flutuante (FAB) ===== */}
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        aria-label="Abrir menu"
+        className="lg:hidden fixed bottom-4 left-4 z-40 bg-[#1e3a8a] text-white rounded-full p-3.5 shadow-lg active:scale-95 transition"
+      >
+        <Menu size={22} />
+      </button>
+
+      {/* Backdrop */}
+      {aberto && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px]"
+          onClick={() => setAberto(false)}
+        />
+      )}
+
+      {/* Drawer deslizante */}
+      <aside
+        className={cn(
+          "lg:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white flex flex-col",
+          "transition-transform duration-200 ease-out",
+          aberto ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setAberto(false)}
+          aria-label="Fechar menu"
+          className="absolute top-4 right-3 text-blue-100 hover:text-white p-1"
+        >
+          <X size={20} />
+        </button>
+        <MenuConteudo path={path} aoNavegar={() => setAberto(false)} />
+      </aside>
+    </>
   );
 }
