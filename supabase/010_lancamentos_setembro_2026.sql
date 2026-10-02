@@ -68,10 +68,7 @@ BEGIN
     AND p.periodo_fim = DATE '2026-09-30';
 
   IF v_qtd > 0 THEN
-    RAISE EXCEPTION
-      'ABORTADO: a prestacao de setembro/2026 ja possui % assinatura(s) valida(s). '
-      'Alterar os lancamentos invalidaria o documento assinado. '
-      'Revogue as assinaturas pelo sistema antes de refazer o mes.', v_qtd;
+    RAISE EXCEPTION 'ABORTADO: a prestacao de setembro/2026 ja possui % assinatura(s) valida(s). Alterar os lancamentos invalidaria o documento assinado. Revogue as assinaturas pelo sistema antes de refazer o mes.', v_qtd;
   END IF;
 END
 $TRAVA$;
