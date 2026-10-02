@@ -13,7 +13,9 @@
 --   4. A data real de cada pagamento — a prestação é por REGIME DE CAIXA.
 --      Pagamento que saiu em 01/10 pertence a outubro, não a setembro.
 --
--- Se algum valor divergir, corrija a linha correspondente ANTES de rodar.
+-- Se algum valor divergir, corrija a linha correspondente e rode de novo:
+-- o script e idempotente (ver bloco IDEMPOTENCIA abaixo), entao reexecutar
+-- substitui os lancamentos de setembro em vez de duplica-los.
 -- ============================================================================
 --
 -- REGRA DO TETO DA RUBRICA
@@ -45,11 +47,50 @@
 --   Saldo p/ outubro                                       = 28.525,28
 -- ============================================================================
 
--- Diagnóstico: confirma que ainda não há lançamentos de setembro (evita duplicar)
-SELECT COUNT(*) AS ja_existem
-FROM caritas_lancamentos
+-- ----------------------------------------------------------------------------
+-- TRAVA DE SEGURANÇA
+-- ----------------------------------------------------------------------------
+-- Se a prestação de setembro já tiver assinatura eletrônica válida, abortar.
+-- Mexer nos lançamentos mudaria o conteúdo e, portanto, o código de
+-- integridade: as assinaturas já coletadas passariam a constar como
+-- divergentes e o documento entregue perderia validade.
+-- ----------------------------------------------------------------------------
+DO $TRAVA$
+DECLARE
+  v_qtd INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO v_qtd
+  FROM caritas_assinaturas a
+  JOIN caritas_prestacoes_contas p ON p.id = a.entidade_id
+  WHERE a.entidade = 'prestacao'
+    AND a.revogada = false
+    AND p.periodo_inicio = DATE '2026-09-01'
+    AND p.periodo_fim = DATE '2026-09-30';
+
+  IF v_qtd > 0 THEN
+    RAISE EXCEPTION
+      'ABORTADO: a prestacao de setembro/2026 ja possui % assinatura(s) valida(s). '
+      'Alterar os lancamentos invalidaria o documento assinado. '
+      'Revogue as assinaturas pelo sistema antes de refazer o mes.', v_qtd;
+  END IF;
+END
+$TRAVA$;
+
+-- ----------------------------------------------------------------------------
+-- IDEMPOTÊNCIA
+-- ----------------------------------------------------------------------------
+-- Este script DEFINE o estado de setembro. Rodar de novo (depois de corrigir
+-- um valor contra o extrato, por exemplo) substitui o que ele mesmo criou,
+-- em vez de duplicar.
+--
+-- Preserva o que já foi conferido: lançamentos com status 'conciliado' ou
+-- 'glosado' NÃO são removidos. Se houver algum, o script não deve ser usado
+-- para refazer o mês — ajuste pela tela do sistema.
+-- ----------------------------------------------------------------------------
+DELETE FROM caritas_lancamentos
 WHERE convenio_id = (SELECT id FROM caritas_convenios WHERE numero = '001/FMAS/2025')
-  AND data_lancamento BETWEEN '2026-09-01' AND '2026-09-30';
+  AND data_lancamento BETWEEN DATE '2026-09-01' AND DATE '2026-09-30'
+  AND status IN ('previsto', 'realizado');
 
 -- ----------------------------------------------------------------------------
 -- 1) Repasse municipal — 6ª parcela
@@ -145,11 +186,25 @@ VALUES (
 -- ============================================================================
 -- Prestação de contas de setembro/2026 (6ª parcela)
 -- ============================================================================
-DELETE FROM caritas_prestacoes_contas
-WHERE convenio_id = (SELECT id FROM caritas_convenios WHERE numero = '001/FMAS/2025')
-  AND periodo_inicio = DATE '2026-09-01'
-  AND periodo_fim = DATE '2026-09-30';
+-- Remove a prestação ANTERIOR do mesmo período apenas se for seguro:
+--   - ainda em rascunho (não protocolada nem analisada), e
+--   - sem nenhuma assinatura eletrônica válida.
+-- As assinaturas guardam a prestação por UUID, sem foreign key — apagar uma
+-- prestação assinada deixaria assinaturas órfãs e quebraria o QR já impresso.
+DELETE FROM caritas_prestacoes_contas p
+WHERE p.convenio_id = (SELECT id FROM caritas_convenios WHERE numero = '001/FMAS/2025')
+  AND p.periodo_inicio = DATE '2026-09-01'
+  AND p.periodo_fim = DATE '2026-09-30'
+  AND p.status = 'rascunho'
+  AND p.protocolo IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM caritas_assinaturas a
+    WHERE a.entidade = 'prestacao' AND a.entidade_id = p.id AND a.revogada = false
+  );
 
+-- Só cria se não sobrou nenhuma (ou seja, se o DELETE acima limpou, ou se
+-- nunca existiu). Se existir uma protocolada/assinada, nada acontece aqui e
+-- a conferência no fim do script mostra qual é.
 INSERT INTO caritas_prestacoes_contas (
   convenio_id, tipo, numero_parcela,
   periodo_inicio, periodo_fim, status, observacoes
@@ -165,7 +220,13 @@ SELECT
 
 4. (1.3) Provisionamento — Sem execução no período; não houve pagamento de férias, 13º salário ou verbas rescisórias na competência.$NOTAS$
 FROM caritas_convenios c
-WHERE c.numero = '001/FMAS/2025';
+WHERE c.numero = '001/FMAS/2025'
+  AND NOT EXISTS (
+    SELECT 1 FROM caritas_prestacoes_contas p
+    WHERE p.convenio_id = c.id
+      AND p.periodo_inicio = DATE '2026-09-01'
+      AND p.periodo_fim = DATE '2026-09-30'
+  );
 
 -- ============================================================================
 -- Conferência final
@@ -182,10 +243,25 @@ WHERE l.convenio_id = (SELECT id FROM caritas_convenios WHERE numero = '001/FMAS
   AND l.data_lancamento BETWEEN '2026-09-01' AND '2026-09-30'
 ORDER BY l.tipo DESC, cat.codigo, l.data_pagamento;
 
--- Totais: receita 12.950,37 | despesa 10.327,71
+-- Esperado: receitas 12.950,37 | despesas 10.327,71 | 1 prestacao em rascunho
 SELECT
-  SUM(CASE WHEN tipo IN ('repasse','rendimento') THEN valor ELSE 0 END) AS receitas_periodo,
-  SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END)                 AS despesas_periodo
-FROM caritas_lancamentos
-WHERE convenio_id = (SELECT id FROM caritas_convenios WHERE numero = '001/FMAS/2025')
-  AND data_lancamento BETWEEN '2026-09-01' AND '2026-09-30';
+  (SELECT SUM(CASE WHEN tipo IN ('repasse','rendimento') THEN valor ELSE 0 END)
+     FROM caritas_lancamentos
+     WHERE convenio_id = c.id AND data_lancamento BETWEEN DATE '2026-09-01' AND DATE '2026-09-30'
+  ) AS receitas_periodo,
+  (SELECT SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END)
+     FROM caritas_lancamentos
+     WHERE convenio_id = c.id AND data_lancamento BETWEEN DATE '2026-09-01' AND DATE '2026-09-30'
+  ) AS despesas_periodo,
+  (SELECT COUNT(*)
+     FROM caritas_lancamentos
+     WHERE convenio_id = c.id AND data_lancamento BETWEEN DATE '2026-09-01' AND DATE '2026-09-30'
+  ) AS qtd_lancamentos,
+  (SELECT p.status || COALESCE(' · protocolo ' || p.protocolo, '')
+     FROM caritas_prestacoes_contas p
+     WHERE p.convenio_id = c.id
+       AND p.periodo_inicio = DATE '2026-09-01' AND p.periodo_fim = DATE '2026-09-30'
+     LIMIT 1
+  ) AS prestacao_setembro
+FROM caritas_convenios c
+WHERE c.numero = '001/FMAS/2025';
